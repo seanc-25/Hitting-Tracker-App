@@ -10,13 +10,7 @@ export default function Error({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error('🔍 [DEPLOYMENT DEBUG] App Error:', error)
-    console.error('🔍 [DEPLOYMENT DEBUG] Error stack:', error.stack)
-    console.error('🔍 [DEPLOYMENT DEBUG] Error environment:', {
-      NODE_ENV: process.env.NODE_ENV,
-      VERCEL_ENV: process.env.VERCEL_ENV,
-      timestamp: new Date().toISOString()
-    })
+    console.error('App Error:', error)
   }, [error])
 
   return (
