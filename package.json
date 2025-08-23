@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "vercel-build": "next build",
     "db:types": "npx supabase gen types typescript --project-id YOUR_PROJECT_ID > src/types/database.ts",
     "db:reset": "npx supabase db reset",
     "db:migrate": "npx supabase migration up"

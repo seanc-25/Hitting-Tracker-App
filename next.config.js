@@ -1,56 +1,24 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Production build optimization for Vercel
+  // Vercel deployment configuration
   output: 'standalone',
-  
-  // Routing configuration
   trailingSlash: false,
   
-  // Image optimization for Vercel
-  images: {
-    unoptimized: false,
+  // Ensure proper App Router handling
+  experimental: {
+    appDir: true,
   },
   
   // Build optimization
   swcMinify: true,
   
-  // Headers for better security and performance
-  async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'X-Frame-Options',
-            value: 'DENY',
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'origin-when-cross-origin',
-          },
-        ],
-      },
-    ];
+  // Image optimization for Vercel
+  images: {
+    unoptimized: true, // Disable for Vercel
   },
   
-  // Redirects for better routing
-  async redirects() {
-    return [
-      {
-        source: '/home',
-        destination: '/',
-        permanent: true,
-      },
-    ];
-  },
-  
-  // Webpack configuration for better builds
+  // Webpack configuration
   webpack: (config, { isServer }) => {
-    // Optimize bundle size
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -59,7 +27,6 @@ const nextConfig = {
         tls: false,
       };
     }
-    
     return config;
   },
 };
