@@ -1,11 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // App Router configuration
-  experimental: {
-    appDir: true,
-  },
-  
-  // Production build optimization
+  // Production build optimization for Vercel
   output: 'standalone',
   
   // Routing configuration
@@ -14,17 +9,10 @@ const nextConfig = {
   // Image optimization for Vercel
   images: {
     unoptimized: false,
-    domains: [],
-    remotePatterns: [],
   },
   
   // Build optimization
   swcMinify: true,
-  
-  // Environment variable validation
-  env: {
-    CUSTOM_KEY: process.env.CUSTOM_KEY,
-  },
   
   // Headers for better security and performance
   async headers() {
