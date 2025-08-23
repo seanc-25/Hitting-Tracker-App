@@ -16,6 +16,13 @@ const publicRoutes = ['/login', '/signup', '/forgot-password', '/reset-password'
 const authFlowRoutes = ['/onboarding']
 
 export default function AuthWrapper({ children }: AuthWrapperProps) {
+  console.log('🔍 [DEPLOYMENT DEBUG] AuthWrapper rendering')
+  console.log('🔍 [DEPLOYMENT DEBUG] AuthWrapper environment:', {
+    NODE_ENV: process.env.NODE_ENV,
+    VERCEL_ENV: process.env.VERCEL_ENV,
+    pathname: typeof window !== 'undefined' ? window.location.pathname : 'SSR'
+  })
+  
   const router = useRouter()
   const pathname = usePathname()
   const { user, profile, isLoading, isInitialized } = useAuth()
