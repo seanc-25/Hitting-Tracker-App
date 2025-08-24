@@ -51,7 +51,10 @@ export default function AuthDebug() {
       })
     } catch (error) {
       console.error('Debug check failed:', error)
-      setDebugInfo({ error: error.message })
+      const errorMessage = error instanceof Error ? error.message : 
+                          typeof error === 'string' ? error : 
+                          'Unknown error occurred'
+      setDebugInfo({ error: errorMessage })
     }
   }
 
