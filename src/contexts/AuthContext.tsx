@@ -34,6 +34,7 @@ export interface AuthState {
   signInWithEmail: (email: string, password: string) => Promise<{ error: AuthError | null }>
   signUpWithEmail: (email: string, password: string) => Promise<{ error: AuthError | null }>
   signInWithGoogle: () => Promise<{ error: AuthError | null }>
+  refreshSession: () => Promise<{ error: Error | null }>
   signOut: () => Promise<void>
   updateProfile: (data: Partial<UserProfile>) => Promise<{ error: Error | null }>
   completeOnboarding: (data: OnboardingData) => Promise<{ error: Error | null }>
@@ -48,6 +49,7 @@ const AuthContext = createContext<AuthState>({
   signInWithEmail: async () => ({ error: null }),
   signUpWithEmail: async () => ({ error: null }),
   signInWithGoogle: async () => ({ error: null }),
+  refreshSession: async () => ({ error: null }),
   signOut: async () => {},
   updateProfile: async () => ({ error: null }),
   completeOnboarding: async () => ({ error: null }),
@@ -152,16 +154,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
         
-        // Wait a bit for Supabase to restore session from storage
-        console.log('Waiting for session restoration...')
-        await new Promise(resolve => setTimeout(resolve, 100))
+        // Wait longer for Supabase to restore session from storage and handle OAuth redirects
+        console.log('Waiting for session restoration and OAuth processing...')
+        await new Promise(resolve => setTimeout(resolve, 500))
         
-        // Get initial session
+        // Get initial session with retry logic
         console.log('Calling getSession()...')
-        const { data: { session }, error } = await supabase.auth.getSession()
+        let session = null
+        let error = null
+        
+        // Try multiple times to get the session
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            const result = await supabase.auth.getSession()
+            session = result.data.session
+            error = result.error
+            
+            if (session?.user || error) {
+              console.log(`Session retrieval attempt ${attempt} completed`)
+              break
+            }
+            
+            console.log(`Session retrieval attempt ${attempt} returned no session, retrying...`)
+            await new Promise(resolve => setTimeout(resolve, 200 * attempt))
+          } catch (retryError) {
+            console.error(`Session retrieval attempt ${attempt} failed:`, retryError)
+            if (attempt === 3) {
+              error = retryError as any
+              break
+            }
+            await new Promise(resolve => setTimeout(resolve, 200 * attempt))
+          }
+        }
         
         if (error) {
-          console.error('Error getting initial session:', error)
+          console.error('Error getting initial session after retries:', error)
           if (mounted) {
             setIsLoading(false)
             setIsInitialized(true)
@@ -189,7 +216,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setIsInitialized(true)
           }
         } else {
-          console.log('❌ No initial session found')
+          console.log('❌ No initial session found after retries')
           // Mark initialization as complete even when no session exists
           if (mounted) {
             setIsLoading(false)
@@ -215,6 +242,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('Event:', event)
         console.log('Session user:', session?.user?.id)
         console.log('Session expires:', session?.expires_at ? new Date(session.expires_at * 1000) : 'no session')
+        console.log('Current URL:', typeof window !== 'undefined' ? window.location.href : 'server-side')
         
         if (!mounted) return
 
@@ -222,6 +250,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (event === 'PASSWORD_RECOVERY') {
           console.log('Password recovery detected, redirecting to reset-password')
           router.push('/reset-password')
+          return
+        }
+        
+        // Handle OAuth sign-in events
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          console.log(`🔄 ${event} event detected`)
+          
+          if (session?.user) {
+            console.log('✅ OAuth session established for user:', session.user.id)
+            setUser(session.user)
+            
+            // Fetch profile with timeout protection
+            try {
+              const profileResult = await fetchProfile(session.user)
+              console.log('Profile fetch result:', profileResult ? 'found' : 'null')
+            } catch (error) {
+              console.error('Profile fetch failed, continuing with null profile:', error)
+              setProfile(null)
+            }
+            
+            // Always mark as initialized after profile fetch attempt
+            if (!isInitialized) {
+              setIsInitialized(true)
+              setIsLoading(false)
+            }
+          } else {
+            console.error('❌ OAuth event but no session user found')
+          }
           return
         }
         
@@ -319,6 +375,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Error signing in with Google:', error)
       return { error: error as AuthError }
+    }
+  }
+
+  // Manual session refresh utility
+  const refreshSession = async () => {
+    try {
+      console.log('=== MANUAL SESSION REFRESH ===')
+      const { data: { session }, error } = await supabase.auth.refreshSession()
+      
+      if (error) {
+        console.error('Error refreshing session:', error)
+        return { error }
+      }
+      
+      if (session?.user) {
+        console.log('✅ Session refreshed successfully for user:', session.user.id)
+        setUser(session.user)
+        
+        // Fetch profile
+        try {
+          const profileResult = await fetchProfile(session.user)
+          console.log('Profile fetch result after refresh:', profileResult ? 'found' : 'null')
+        } catch (error) {
+          console.error('Profile fetch failed after refresh:', error)
+          setProfile(null)
+        }
+        
+        return { error: null }
+      } else {
+        console.log('❌ No session returned after refresh')
+        return { error: new Error('No session returned') }
+      }
+    } catch (error) {
+      console.error('Error in refreshSession:', error)
+      return { error: error as Error }
     }
   }
 
@@ -449,6 +540,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signInWithEmail,
     signUpWithEmail,
     signInWithGoogle,
+    refreshSession,
     signOut,
     updateProfile,
     completeOnboarding,

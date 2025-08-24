@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import { supabase } from '@/lib/supabase'
 import BottomNavWithFAB from './BottomNavWithFAB'
 
 interface AuthWrapperProps {
@@ -18,8 +19,9 @@ const authFlowRoutes = ['/onboarding']
 export default function AuthWrapper({ children }: AuthWrapperProps) {
   const router = useRouter()
   const pathname = usePathname()
-  const { user, profile, isLoading, isInitialized } = useAuth()
+  const { user, profile, isLoading, isInitialized, refreshSession } = useAuth()
   const [hasHandledRedirect, setHasHandledRedirect] = useState(false)
+  const [isCheckingOAuth, setIsCheckingOAuth] = useState(false)
 
   useEffect(() => {
     const handleAuthRedirect = async () => {
@@ -29,6 +31,50 @@ export default function AuthWrapper({ children }: AuthWrapperProps) {
       // Wait for auth state to be fully initialized
       if (isLoading || !isInitialized) {
         return
+      }
+
+      // Check for OAuth session if we're on the home page and no user
+      if (pathname === '/' && !user && !isCheckingOAuth) {
+        setIsCheckingOAuth(true)
+        try {
+          console.log('=== CHECKING FOR OAUTH SESSION ===')
+          
+          // Check if we have OAuth URL parameters
+          const urlParams = new URLSearchParams(window.location.search)
+          const hasOAuthParams = urlParams.has('code') || urlParams.has('state') || urlParams.has('access_token')
+          
+          if (hasOAuthParams) {
+            console.log('OAuth parameters detected in URL, waiting for redirect...')
+            // Wait longer for OAuth redirect to complete
+            await new Promise(resolve => setTimeout(resolve, 2000))
+          } else {
+            // Wait a bit for OAuth redirect to complete
+            await new Promise(resolve => setTimeout(resolve, 1000))
+          }
+          
+          // Check if we have OAuth tokens in cookies
+          const accessToken = document.cookie.split('; ').find(row => row.startsWith('sb-access-token='))
+          const refreshToken = document.cookie.split('; ').find(row => row.startsWith('sb-refresh-token='))
+          
+          if (accessToken || refreshToken) {
+            console.log('Found OAuth tokens, attempting to restore session...')
+            
+            // Try to refresh the session
+            const { error } = await refreshSession()
+            
+            if (!error) {
+              console.log('✅ OAuth session restored successfully via refresh')
+              // The AuthContext will handle this via onAuthStateChange
+              return
+            } else {
+              console.error('Error restoring OAuth session:', error)
+            }
+          }
+        } catch (error) {
+          console.error('Error checking OAuth session:', error)
+        } finally {
+          setIsCheckingOAuth(false)
+        }
       }
 
       // Case 1: No user - redirect to login
@@ -74,13 +120,15 @@ export default function AuthWrapper({ children }: AuthWrapperProps) {
     handleAuthRedirect()
   }, [user, profile, pathname, router, isLoading, isInitialized])
 
-  // Show loading spinner if still loading or not initialized
-  if (isLoading || !isInitialized) {
+  // Show loading spinner if still loading, not initialized, or checking OAuth
+  if (isLoading || !isInitialized || isCheckingOAuth) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading...</p>
+          <p className="text-gray-400">
+            {isCheckingOAuth ? 'Checking authentication...' : 'Loading...'}
+          </p>
         </div>
       </div>
     )

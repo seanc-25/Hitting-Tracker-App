@@ -4,6 +4,7 @@ import "./globals.css";
 import AuthWrapper from "@/components/AuthWrapper";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ClientProviders from "@/app/providers";
+import AuthDebug from "@/components/AuthDebug";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -28,6 +29,7 @@ export default function RootLayout({
           <AuthProvider>
             <AuthWrapper>
               {children}
+              <AuthDebug />
             </AuthWrapper>
           </AuthProvider>
         </ClientProviders>

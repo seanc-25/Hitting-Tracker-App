@@ -9,9 +9,11 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     // Enable automatic session persistence
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false, // Disable client-side URL detection since we use server-side OAuth
+    detectSessionInUrl: true, // Enable to catch OAuth redirects
     // Use localStorage for session storage
     storage: typeof window !== 'undefined' ? window.localStorage : undefined,
     storageKey: 'supabase.auth.token',
+    // Better OAuth handling
+    flowType: 'pkce',
   },
 }); 
