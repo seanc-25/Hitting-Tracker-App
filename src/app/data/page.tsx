@@ -55,7 +55,8 @@ export default function DataPage() {
     timing: [] as string[],
     contactQuality: [] as number[],
     hitType: [] as string[],
-    hitLocation: [] as string[]
+    hitLocation: [] as string[],
+    battingSide: [] as string[]
   })
 
   useEffect(() => {
@@ -311,6 +312,10 @@ export default function DataPage() {
       })
     }
     
+    if (filters.battingSide.length > 0) {
+      filtered = filtered.filter(ab => filters.battingSide.includes(ab.batting_side))
+    }
+    
     return filtered
   }
 
@@ -339,7 +344,8 @@ export default function DataPage() {
       timing: [],
       contactQuality: [],
       hitType: [],
-      hitLocation: []
+      hitLocation: [],
+      battingSide: []
     })
   }
 
@@ -544,6 +550,28 @@ export default function DataPage() {
                   </div>
                 </div>
 
+                {/* Batting Side Filter - Only for Switch Hitters */}
+                {profile?.hitting_side === 'switch' && (
+                  <div>
+                    <label className="block text-base font-semibold text-gray-300 mb-3">Batting Side</label>
+                    <div className="flex justify-center gap-3">
+                      {['Left', 'Right'].map(side => (
+                        <button
+                          key={side}
+                          onClick={() => toggleFilter('battingSide', side)}
+                          className={`px-6 py-3 rounded-full text-sm font-medium transition-all duration-200 border ${
+                            filters.battingSide.includes(side)
+                              ? 'bg-blue-600 text-white border-blue-600'
+                              : 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600'
+                          }`}
+                        >
+                          {side}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Pitch Type Filter */}
                 <div>
                   <label className="block text-base font-semibold text-gray-300 mb-3">Pitch Type</label>
@@ -552,7 +580,7 @@ export default function DataPage() {
                       <button
                         key={type}
                         onClick={() => toggleFilter('pitchType', type)}
-                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 border ${
+                        className={`px-6 py-3 rounded-full text-sm font-medium transition-all duration-200 border ${
                           filters.pitchType.includes(type)
                             ? 'bg-blue-600 text-white border-blue-600'
                             : 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600'
@@ -690,34 +718,36 @@ export default function DataPage() {
             {getFilteredAtBats().map((atBat) => (
               <div 
                 key={atBat.id} 
-                className={`bg-gray-900 rounded-xl shadow-md px-6 pt-6 pb-4 border overflow-hidden transition-all duration-300 ease-in-out ${
+                className={`bg-gray-900 rounded-xl shadow-md px-6 pt-6 pb-4 border transition-all duration-300 ease-in-out relative ${
                   editingId === atBat.id 
                     ? 'border-blue-500 bg-blue-500/5' 
                     : 'border-gray-800'
                 }`}
               >
+                {/* Editing Pill Button - Top Center of Border */}
+                {editingId === atBat.id && (
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-20">
+                    <span className="text-xs text-white font-semibold bg-blue-500 px-3 py-1 rounded-full border border-blue-500 shadow-lg">
+                      Editing
+                    </span>
+                  </div>
+                )}
+
+                {/* Batting Side Indicator for Switch Hitters - Top Center */}
+                {profile?.hitting_side === 'switch' && (
+                  <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-10">
+                    <span className="text-sm text-emerald-400 font-bold bg-gray-900 px-2 py-1 rounded-full border border-emerald-400/30">
+                      {atBat.batting_side === 'Left' ? 'L' : 'R'}
+                    </span>
+                  </div>
+                )}
+
                 {/* Header with Date and Actions */}
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-lg font-semibold text-white">
+                <div className="flex justify-between items-center mb-0">
+                  <h3 className="text-xl font-semibold text-white pl-3 pt-4 underline underline-offset-2">
                     {formatDate(atBat.date)}
                   </h3>
-                    {editingId === atBat.id && (
-                    <>
-                      <div className="absolute left-1/2 transform -translate-x-1/2">
-                      <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded-full">
-                          Editing
-                      </span>
-                      </div>
-                      <div className="absolute right-4">
-                        <button
-                          onClick={handleCancelEdit}
-                          className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-black"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                      </>
-                  )}
+
                   <div className="flex items-center gap-2">
                     {editingId !== atBat.id && (
                         <button
@@ -732,6 +762,18 @@ export default function DataPage() {
                     )}
                   </div>
                 </div>
+
+                {/* Cancel Button - Positioned to align with date */}
+                {editingId === atBat.id && (
+                  <div className="absolute right-9 top-10">
+                    <button
+                      onClick={handleCancelEdit}
+                      className="text-gray-400 hover:text-white text-sm font-medium transition-colors focus:outline-none underline underline-offset-2 hover:no-underline"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
 
                 {/* Content - Sentence Template with Strike Zone */}
                 <div className={`${editingId === atBat.id ? 'block' : 'block'} py-4`}>
@@ -812,7 +854,7 @@ export default function DataPage() {
                                     onClick={() => setEditingData(prev => prev ? { ...prev, pitch_location: zone } : null)}
                                     className={`h-9 w-9 flex items-center justify-center rounded-md text-sm font-medium transition-all duration-200 transform focus:outline-none ${
                                       editingData?.pitch_location === zone 
-                                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30 scale-105' 
+                                        ? 'bg-blue-600 text-white scale-105' 
                                         : 'bg-gray-800 text-gray-300 hover:bg-gray-700 hover:scale-102 active:scale-95'
                                     }`}
                                   >
@@ -946,12 +988,7 @@ export default function DataPage() {
                           </p>
                         </div>
                         
-                        {/* Switch hitter info if applicable */}
-                        {profile?.hitting_side === 'switch' && (
-                          <p className="text-sm text-gray-400">
-                            Batting: {atBat.batting_side}
-                          </p>
-                        )}
+
 
                                                                         {/* Two-column layout: Strike Zone and Field Outline */}
                                                   <div className="grid grid-cols-2 gap-4 items-center relative mt-2">
@@ -1002,11 +1039,14 @@ export default function DataPage() {
                   <div className="flex justify-center">
                     <button
                       onClick={() => toggleCardExpansion(atBat.id)}
-                      className="text-gray-400 hover:text-gray-300 transition-all duration-300 ease-in-out transform"
+                      className="text-gray-400 hover:text-gray-300 transition-all duration-300 ease-in-out transform flex items-center gap-1"
                       aria-label={expandedCards.has(atBat.id) ? 'Show less' : 'Show more'}
                     >
+                      <span className="text-xs">
+                        {expandedCards.has(atBat.id) ? 'Less info' : 'More info'}
+                      </span>
                       <svg 
-                        className={`w-5 h-5 transition-transform duration-300 ease-in-out ${
+                        className={`w-3 h-3 transition-transform duration-300 ease-in-out ${
                           expandedCards.has(atBat.id) ? 'rotate-180' : ''
                         }`}
                         fill="none" 
@@ -1027,8 +1067,8 @@ export default function DataPage() {
                 {/* Expanded Details Section */}
                 {expandedCards.has(atBat.id) && editingId !== atBat.id && (
                   <div className="mt-4 pt-4 border-t border-gray-800">
-                    {/* Edit Button - positioned above the cards on the right */}
-                    <div className="flex justify-end mb-6">
+                    {/* Edit Button - positioned above the cards on the left */}
+                    <div className="flex justify-start mb-6">
                       <button
                         onClick={() => handleEdit(atBat)}
                         className="w-8 h-8 flex items-center justify-center text-blue-400 hover:text-blue-300 hover:bg-blue-500/20 rounded transition-colors"

@@ -86,11 +86,26 @@ export default function AuthWrapper({ children }: AuthWrapperProps) {
     )
   }
 
-  // Render children with bottom navigation
+  // Determine if we should show the bottom navigation
+  // Only show for authenticated users who have completed onboarding on protected routes
+  // This ensures the bottom nav is hidden on:
+  // - Public routes: /login, /signup, /forgot-password, /reset-password
+  // - Auth flow routes: /onboarding
+  // - Add AB form page (/add)
+  // - Loading/initialization states
+  // - Unauthenticated users
+  const shouldShowBottomNav = 
+    user && 
+    profile?.has_completed_onboarding === true && 
+    !publicRoutes.includes(pathname) && 
+    !authFlowRoutes.includes(pathname) &&
+    pathname !== '/add'
+
+  // Render children with conditional bottom navigation
   return (
     <>
       {children}
-      <BottomNavWithFAB />
+      {shouldShowBottomNav && <BottomNavWithFAB />}
     </>
   )
 } 

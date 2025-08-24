@@ -10,8 +10,8 @@ import { formatDateForStorage } from '@/utils/dateUtils'
 type HittingSide = 'left' | 'right' | 'switch'
 
 const HITTING_SIDE_OPTIONS = [
-  { value: 'right', label: 'Right' },
   { value: 'left', label: 'Left' },
+  { value: 'right', label: 'Right' },
   { value: 'switch', label: 'Switch' }
 ] as const
 

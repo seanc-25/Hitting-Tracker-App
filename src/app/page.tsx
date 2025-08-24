@@ -12,6 +12,7 @@ export default function DashboardPage() {
   const { user, profile, isLoading } = useAuth()
   const [atBats, setAtBats] = useState<AtBat[]>([])
   const [selectedPitchType, setSelectedPitchType] = useState<'all' | 'fastball' | 'offspeed'>('all')
+  const [selectedBattingSide, setSelectedBattingSide] = useState<'left' | 'right'>('left')
   const [lastAtBatsCount, setLastAtBatsCount] = useState(10)
   const [loading, setLoading] = useState(true)
 
@@ -41,10 +42,23 @@ export default function DashboardPage() {
   }
 
   const getFilteredAtBats = () => {
-    if (selectedPitchType === 'all') return atBats
-    return atBats.filter(ab => 
-      ab.pitch_type.toLowerCase() === selectedPitchType
-    )
+    let filtered = atBats
+    
+    // Filter by pitch type
+    if (selectedPitchType !== 'all') {
+      filtered = filtered.filter(ab => 
+        ab.pitch_type.toLowerCase() === selectedPitchType
+      )
+    }
+    
+    // Filter by batting side for switch hitters
+    if (profile?.hitting_side === 'switch') {
+      filtered = filtered.filter(ab => 
+        ab.batting_side?.toLowerCase() === selectedBattingSide
+      )
+    }
+    
+    return filtered
   }
 
   const getRecentAtBats = (count: number) => {
@@ -198,6 +212,32 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
+          
+          {/* Batting Side Selector for Switch Hitters */}
+          {profile?.hitting_side === 'switch' && (
+            <div className="mt-4">
+              <div className="bg-gray-900 rounded-xl p-1 inline-block">
+                <div className="flex">
+                  {[
+                    { key: 'left', label: 'L' },
+                    { key: 'right', label: 'R' }
+                  ].map((option) => (
+                    <button
+                      key={option.key}
+                      onClick={() => setSelectedBattingSide(option.key as any)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        selectedBattingSide === option.key
+                          ? 'bg-blue-600 text-white'
+                          : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Charts Grid */}
@@ -603,7 +643,7 @@ export default function DashboardPage() {
                 const segments = [
                   { key: 'grounder', label: 'Grounder', value: hitTypeData.grounder, pct: grounderPct, color: '#DC2626', bgColor: '#DC2626' },
                   { key: 'lineDrive', label: 'Line Drive', value: hitTypeData.lineDrive, pct: lineDrivePct, color: '#10B981', bgColor: '#10B981' },
-                  { key: 'flyball', label: 'Flyball', value: hitTypeData.flyball, pct: flyballPct, color: '#3B82F6', bgColor: '#3B82F6' }
+                  { key: 'flyball', label: 'Flyball', value: hitTypeData.flyball, pct: flyballPct, color: '#F59E0B', bgColor: '#F59E0B' }
                 ].filter(segment => segment.value > 0)
                 
                 return (
@@ -622,8 +662,8 @@ export default function DashboardPage() {
                             <stop offset="100%" stopColor="#047857" />
                           </linearGradient>
                           <linearGradient id="flyballGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stopColor="#3B82F6" />
-                            <stop offset="100%" stopColor="#1D4ED8" />
+                            <stop offset="0%" stopColor="#F59E0B" />
+                            <stop offset="100%" stopColor="#D97706" />
                           </linearGradient>
                           
                           {/* Drop Shadow Filter */}
@@ -669,7 +709,7 @@ export default function DashboardPage() {
                         {[
                           { key: 'grounder', label: 'Grounder', value: hitTypeData.grounder, pct: grounderPct, color: '#DC2626' },
                           { key: 'lineDrive', label: 'Line Drive', value: hitTypeData.lineDrive, pct: lineDrivePct, color: '#10B981' },
-                          { key: 'flyball', label: 'Flyball', value: hitTypeData.flyball, pct: flyballPct, color: '#3B82F6' }
+                          { key: 'flyball', label: 'Flyball', value: hitTypeData.flyball, pct: flyballPct, color: '#F59E0B' }
                         ].map((segment, index) => (
                           <div
                             key={segment.key}
@@ -709,7 +749,16 @@ export default function DashboardPage() {
         {filteredAtBats.length === 0 && (
           <div className="text-center py-12">
             <div className="text-gray-400 text-lg mb-2">
-              {selectedPitchType === 'all' ? 'No at-bats recorded yet' : `No ${selectedPitchType} at-bats recorded`}
+              {(() => {
+                let message = 'No at-bats recorded yet'
+                if (selectedPitchType !== 'all') {
+                  message = `No ${selectedPitchType} at-bats recorded`
+                }
+                if (profile?.hitting_side === 'switch') {
+                  message += ` from ${selectedBattingSide} side`
+                }
+                return message
+              })()}
             </div>
             <p className="text-gray-500">
               Start logging your at-bats to see your performance data here!

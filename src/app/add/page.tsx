@@ -210,18 +210,18 @@ export default function AddAtBatPage() {
         {userHittingSide === 'switch' && (
           <div className="bg-gray-900 rounded-lg p-6">
             <label className="block text-lg font-medium text-gray-300 mb-4">
-              Which side did you hit from this at-bat?
+              Batting side
             </label>
-            <div className="flex bg-gray-800 border border-gray-700 rounded-lg p-1">
-              {(['right', 'left'] as const).map((side) => (
+            <div className="flex gap-3">
+              {(['left', 'right'] as const).map((side) => (
                 <button
                   key={side}
                   type="button"
                   onClick={() => handleChange("battingSide", side)}
-                  className={`flex-1 py-3 px-6 text-center font-medium rounded-md transition-all duration-200 text-lg ${
+                  className={`flex-1 py-3 px-6 text-center font-medium rounded-full border transition-all duration-200 text-lg ${
                     form.battingSide === side
-                      ? 'bg-blue-600 text-white shadow-lg'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700 hover:border-gray-600'
                   }`}
                 >
                   {side.charAt(0).toUpperCase() + side.slice(1)}
@@ -234,17 +234,17 @@ export default function AddAtBatPage() {
 
         {/* Pitch Type (vertical) + Pitch Location (9-box) side-by-side */}
         <div className="bg-gray-900 rounded-lg p-6">
-          <div className="flex w-full justify-center items-start gap-16">
+          <div className="flex w-full justify-center items-start gap-8">
             {/* Left: Pitch Type vertical stack */}
             <div className="flex flex-col">
-              <label className="block text-lg font-medium text-gray-300 mb-3">Pitch Type</label>
+              <label className="block text-lg font-medium text-gray-300 mb-3 text-center">Pitch Type</label>
               <div className="flex flex-col gap-2">
                 {(["Fastball", "Offspeed"] as const).map((opt) => (
                   <button
                     key={opt}
                     type="button"
                     onClick={() => handleChange("pitchType", opt)}
-                    className={`h-10 px-6 rounded-full text-base font-medium transition-all duration-200 border ${
+                    className={`h-12 px-8 rounded-full text-base font-medium transition-all duration-200 border ${
                       form.pitchType === opt
                         ? 'bg-blue-600 text-white border-blue-600'
                         : 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700'
@@ -259,8 +259,8 @@ export default function AddAtBatPage() {
             </div>
 
             {/* Right: Pitch Location strike zone */}
-            <div className="flex flex-col items-start">
-              <label className="block text-lg font-medium text-gray-300 mb-3">Pitch Location</label>
+            <div className="flex flex-col items-center">
+              <label className="block text-lg font-medium text-gray-300 mb-3 text-center">Pitch Location</label>
               <div className="grid grid-cols-3 gap-1.5 w-32">
                 {[1,2,3,4,5,6,7,8,9].map(zone => (
                   <button 
@@ -339,7 +339,7 @@ export default function AddAtBatPage() {
           <div className="flex w-full justify-center items-start gap-8">
             {/* Left: Hit Type vertical stack */}
             <div className="flex flex-col">
-              <label className="block text-lg font-medium text-gray-300 mb-3">Hit Type</label>
+              <label className="block text-lg font-medium text-gray-300 mb-3 text-center">Hit Type</label>
               <div className="flex flex-col gap-2">
                 {(["Flyball", "Line Drive", "Grounder"] as const).map((opt) => (
                   <button
@@ -364,7 +364,7 @@ export default function AddAtBatPage() {
 
             {/* Right: Hit Location field */}
             <div className="flex flex-col items-center">
-              <label className="block text-lg font-medium text-gray-300 mb-3">Hit Location</label>
+              <label className="block text-lg font-medium text-gray-300 mb-3 text-center">Hit Location</label>
               <div className="w-40 h-32">
                 <Field 
                   onLocationSelect={(x, y) => setForm(f => ({ ...f, hitLocation: { x, y } }))}
