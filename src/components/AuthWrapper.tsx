@@ -46,10 +46,10 @@ export default function AuthWrapper({ children }: AuthWrapperProps) {
           if (hasOAuthParams) {
             console.log('OAuth parameters detected in URL, waiting for redirect...')
             // Wait longer for OAuth redirect to complete
-            await new Promise(resolve => setTimeout(resolve, 3000)) // Increased from 2000ms
+            await new Promise(resolve => setTimeout(resolve, 4000)) // Increased from 3000ms
           } else {
             // Wait a bit for OAuth redirect to complete
-            await new Promise(resolve => setTimeout(resolve, 1500)) // Increased from 1000ms
+            await new Promise(resolve => setTimeout(resolve, 2000)) // Increased from 1500ms
           }
           
           // Enhanced cookie checking for OAuth tokens
@@ -114,6 +114,28 @@ export default function AuthWrapper({ children }: AuthWrapperProps) {
                 }
               } catch (error) {
                 console.log('Hash processing threw error:', error)
+              }
+            }
+            
+            // Approach 4: If still no session, try manual token restoration
+            if (!sessionRestored && accessToken && refreshToken) {
+              try {
+                console.log('Attempting manual token restoration...')
+                
+                // Wait a bit more for Supabase to process the tokens
+                await new Promise(resolve => setTimeout(resolve, 1500))
+                
+                // Try to refresh the session again
+                const { error } = await supabase.auth.refreshSession()
+                if (!error) {
+                  const { data: { session } } = await supabase.auth.getSession()
+                  if (session?.user) {
+                    console.log('✅ OAuth session restored via manual token restoration for user:', session.user.id)
+                    sessionRestored = true
+                  }
+                }
+              } catch (error) {
+                console.log('Manual token restoration failed:', error)
               }
             }
             

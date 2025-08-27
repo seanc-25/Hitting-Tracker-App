@@ -35,6 +35,7 @@ export interface AuthState {
   signUpWithEmail: (email: string, password: string) => Promise<{ error: AuthError | null }>
   signInWithGoogle: () => Promise<{ error: AuthError | null }>
   refreshSession: () => Promise<{ error: Error | null }>
+  recoverOAuthSession: () => Promise<{ error: Error | null }>
   signOut: () => Promise<void>
   updateProfile: (data: Partial<UserProfile>) => Promise<{ error: Error | null }>
   completeOnboarding: (data: OnboardingData) => Promise<{ error: Error | null }>
@@ -50,6 +51,7 @@ const AuthContext = createContext<AuthState>({
   signUpWithEmail: async () => ({ error: null }),
   signInWithGoogle: async () => ({ error: null }),
   refreshSession: async () => ({ error: null }),
+  recoverOAuthSession: async () => ({ error: null }),
   signOut: async () => {},
   updateProfile: async () => ({ error: null }),
   completeOnboarding: async () => ({ error: null }),
@@ -442,6 +444,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const recoverOAuthSession = async () => {
+    try {
+      console.log('=== RECOVERING OAUTH SESSION ===')
+      debugSessionState()
+
+      // Try to refresh the session using the tokens
+      const { error } = await supabase.auth.refreshSession()
+
+      if (error) {
+        console.error('Error recovering OAuth session:', error)
+        return { error }
+      } else {
+        console.log('OAuth session recovered successfully')
+        return { error: null }
+      }
+    } catch (error) {
+      console.error('Error in recoverOAuthSession:', error)
+      return { error: error as Error }
+    }
+  }
+
   const signOut = async () => {
     try {
       console.log('Signing out...')
@@ -570,6 +593,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signUpWithEmail,
     signInWithGoogle,
     refreshSession,
+    recoverOAuthSession,
     signOut,
     updateProfile,
     completeOnboarding,

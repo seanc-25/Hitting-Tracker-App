@@ -43,7 +43,7 @@ export async function GET(request: Request) {
       // Create response with redirect to home
       const response = NextResponse.redirect(new URL('/', requestUrl.origin))
       
-      // Enhanced session cookies for better persistence
+      // Set Supabase's standard session cookies for proper session recognition
       if (session.access_token) {
         response.cookies.set('sb-access-token', session.access_token, {
           httpOnly: false, // Allow client-side access for debugging
@@ -70,9 +70,9 @@ export async function GET(request: Request) {
         console.log('⚠️ No refresh token to set in cookie')
       }
 
-      // Set additional auth cookie for Supabase compatibility
+      // Set the main Supabase auth cookie that the client expects
       if (session.access_token && session.refresh_token) {
-        const authToken = JSON.stringify({
+        const authData = {
           access_token: session.access_token,
           refresh_token: session.refresh_token,
           expires_at: session.expires_at,
@@ -82,16 +82,27 @@ export async function GET(request: Request) {
             email: session.user?.email,
             role: 'authenticated'
           }
-        })
+        }
         
-        response.cookies.set('sb-auth-token', authToken, {
+        // This is the key cookie that Supabase client looks for
+        response.cookies.set('sb-auth-token', JSON.stringify(authData), {
           httpOnly: false,
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'lax',
           maxAge: 60 * 60 * 24 * 7, // 7 days
           path: '/',
         })
-        console.log('✅ Set auth token cookie')
+        console.log('✅ Set main auth token cookie')
+        
+        // Also set the localStorage-compatible cookie
+        response.cookies.set('supabase.auth.token', JSON.stringify(authData), {
+          httpOnly: false,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 60 * 60 * 24 * 7, // 7 days
+          path: '/',
+        })
+        console.log('✅ Set localStorage-compatible auth token cookie')
       }
 
       // Add cache control headers to prevent caching of the callback
