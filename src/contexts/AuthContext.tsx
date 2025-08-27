@@ -156,15 +156,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         // Wait longer for Supabase to restore session from storage and handle OAuth redirects
         console.log('Waiting for session restoration and OAuth processing...')
-        await new Promise(resolve => setTimeout(resolve, 500))
+        await new Promise(resolve => setTimeout(resolve, 1000)) // Increased from 500ms to 1000ms
         
-        // Get initial session with retry logic
+        // Get initial session with enhanced retry logic
         console.log('Calling getSession()...')
         let session = null
         let error = null
         
-        // Try multiple times to get the session
-        for (let attempt = 1; attempt <= 3; attempt++) {
+        // Try multiple times to get the session with exponential backoff
+        for (let attempt = 1; attempt <= 5; attempt++) { // Increased from 3 to 5 attempts
           try {
             const result = await supabase.auth.getSession()
             session = result.data.session
@@ -176,14 +176,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
             
             console.log(`Session retrieval attempt ${attempt} returned no session, retrying...`)
-            await new Promise(resolve => setTimeout(resolve, 200 * attempt))
+            // Exponential backoff: 200ms, 400ms, 800ms, 1600ms, 3200ms
+            await new Promise(resolve => setTimeout(resolve, 200 * Math.pow(2, attempt - 1)))
           } catch (retryError) {
             console.error(`Session retrieval attempt ${attempt} failed:`, retryError)
-            if (attempt === 3) {
+            if (attempt === 5) { // Increased from 3 to 5
               error = retryError as any
               break
             }
-            await new Promise(resolve => setTimeout(resolve, 200 * attempt))
+            // Exponential backoff for errors too
+            await new Promise(resolve => setTimeout(resolve, 200 * Math.pow(2, attempt - 1)))
           }
         }
         
@@ -253,13 +255,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return
         }
         
-        // Handle OAuth sign-in events
+        // Handle OAuth sign-in events with enhanced logic
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           console.log(`🔄 ${event} event detected`)
           
           if (session?.user) {
             console.log('✅ OAuth session established for user:', session.user.id)
             setUser(session.user)
+            
+            // Wait a bit for the session to fully establish
+            await new Promise(resolve => setTimeout(resolve, 500))
             
             // Fetch profile with timeout protection
             try {
@@ -378,35 +383,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // Manual session refresh utility
+  // Manual session refresh utility with enhanced retry logic
   const refreshSession = async () => {
     try {
       console.log('=== MANUAL SESSION REFRESH ===')
-      const { data: { session }, error } = await supabase.auth.refreshSession()
       
-      if (error) {
-        console.error('Error refreshing session:', error)
-        return { error }
-      }
-      
-      if (session?.user) {
-        console.log('✅ Session refreshed successfully for user:', session.user.id)
-        setUser(session.user)
-        
-        // Fetch profile
+      // Try multiple times with exponential backoff
+      for (let attempt = 1; attempt <= 3; attempt++) {
         try {
-          const profileResult = await fetchProfile(session.user)
-          console.log('Profile fetch result after refresh:', profileResult ? 'found' : 'null')
-        } catch (error) {
-          console.error('Profile fetch failed after refresh:', error)
-          setProfile(null)
+          const { data: { session }, error } = await supabase.auth.refreshSession()
+          
+          if (error) {
+            console.error(`Session refresh attempt ${attempt} failed:`, error)
+            if (attempt === 3) {
+              return { error }
+            }
+            // Wait before retry
+            await new Promise(resolve => setTimeout(resolve, 500 * attempt))
+            continue
+          }
+          
+          if (session?.user) {
+            console.log('✅ Session refreshed successfully for user:', session.user.id)
+            setUser(session.user)
+            
+            // Fetch profile
+            try {
+              const profileResult = await fetchProfile(session.user)
+              console.log('Profile fetch result after refresh:', profileResult ? 'found' : 'null')
+            } catch (error) {
+              console.error('Profile fetch failed after refresh:', error)
+              setProfile(null)
+            }
+            
+            return { error: null }
+          } else {
+            console.log(`❌ No session returned after refresh attempt ${attempt}`)
+            if (attempt === 3) {
+              return { error: new Error('No session returned after all attempts') }
+            }
+            // Wait before retry
+            await new Promise(resolve => setTimeout(resolve, 500 * attempt))
+          }
+        } catch (retryError) {
+          console.error(`Session refresh attempt ${attempt} threw error:`, retryError)
+          if (attempt === 3) {
+            return { error: retryError as Error }
+          }
+          // Wait before retry
+          await new Promise(resolve => setTimeout(resolve, 500 * attempt))
         }
-        
-        return { error: null }
-      } else {
-        console.log('❌ No session returned after refresh')
-        return { error: new Error('No session returned') }
       }
+      
+      return { error: new Error('Session refresh failed after all attempts') }
     } catch (error) {
       console.error('Error in refreshSession:', error)
       return { error: error as Error }

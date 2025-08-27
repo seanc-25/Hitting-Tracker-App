@@ -33,11 +33,11 @@ export default function AuthWrapper({ children }: AuthWrapperProps) {
         return
       }
 
-      // Check for OAuth session if we're on the home page and no user
+      // Enhanced OAuth session recovery logic
       if (pathname === '/' && !user && !isCheckingOAuth) {
         setIsCheckingOAuth(true)
         try {
-          console.log('=== CHECKING FOR OAUTH SESSION ===')
+          console.log('=== ENHANCED OAUTH SESSION RECOVERY ===')
           
           // Check if we have OAuth URL parameters
           const urlParams = new URLSearchParams(window.location.search)
@@ -46,32 +46,91 @@ export default function AuthWrapper({ children }: AuthWrapperProps) {
           if (hasOAuthParams) {
             console.log('OAuth parameters detected in URL, waiting for redirect...')
             // Wait longer for OAuth redirect to complete
-            await new Promise(resolve => setTimeout(resolve, 2000))
+            await new Promise(resolve => setTimeout(resolve, 3000)) // Increased from 2000ms
           } else {
             // Wait a bit for OAuth redirect to complete
-            await new Promise(resolve => setTimeout(resolve, 1000))
+            await new Promise(resolve => setTimeout(resolve, 1500)) // Increased from 1000ms
           }
           
-          // Check if we have OAuth tokens in cookies
-          const accessToken = document.cookie.split('; ').find(row => row.startsWith('sb-access-token='))
-          const refreshToken = document.cookie.split('; ').find(row => row.startsWith('sb-refresh-token='))
+          // Enhanced cookie checking for OAuth tokens
+          const cookies = document.cookie.split('; ')
+          const accessToken = cookies.find(row => row.startsWith('sb-access-token='))
+          const refreshToken = cookies.find(row => row.startsWith('sb-refresh-token='))
+          const authToken = cookies.find(row => row.startsWith('sb-auth-token='))
           
-          if (accessToken || refreshToken) {
+          console.log('OAuth cookies found:', {
+            accessToken: !!accessToken,
+            refreshToken: !!refreshToken,
+            authToken: !!authToken
+          })
+          
+          if (accessToken || refreshToken || authToken) {
             console.log('Found OAuth tokens, attempting to restore session...')
             
-            // Try to refresh the session
-            const { error } = await refreshSession()
+            // Try multiple approaches to restore the session
+            let sessionRestored = false
             
-            if (!error) {
-              console.log('✅ OAuth session restored successfully via refresh')
-              // The AuthContext will handle this via onAuthStateChange
-              return
-            } else {
-              console.error('Error restoring OAuth session:', error)
+            // Approach 1: Try to refresh the session
+            try {
+              const { error } = await refreshSession()
+              if (!error) {
+                console.log('✅ OAuth session restored successfully via refresh')
+                sessionRestored = true
+              } else {
+                console.log('Session refresh failed, trying direct session check...')
+              }
+            } catch (error) {
+              console.log('Session refresh threw error, trying direct session check...')
             }
+            
+            // Approach 2: If refresh failed, try direct session check
+            if (!sessionRestored) {
+              try {
+                const { data: { session }, error } = await supabase.auth.getSession()
+                if (session?.user) {
+                  console.log('✅ OAuth session found via direct check for user:', session.user.id)
+                  sessionRestored = true
+                } else {
+                  console.log('Direct session check failed:', error)
+                }
+              } catch (error) {
+                console.log('Direct session check threw error:', error)
+              }
+            }
+            
+            // Approach 3: If still no session, try to process OAuth hash
+            if (!sessionRestored && typeof window !== 'undefined' && window.location.hash) {
+              try {
+                console.log('Attempting to process OAuth hash...')
+                // Wait a bit more for Supabase to process the hash
+                await new Promise(resolve => setTimeout(resolve, 1000))
+                
+                const { data: { session }, error } = await supabase.auth.getSession()
+                if (session?.user) {
+                  console.log('✅ OAuth session restored via hash processing for user:', session.user.id)
+                  sessionRestored = true
+                } else {
+                  console.log('Hash processing failed:', error)
+                }
+              } catch (error) {
+                console.log('Hash processing threw error:', error)
+              }
+            }
+            
+            if (!sessionRestored) {
+              console.log('❌ All OAuth session recovery attempts failed')
+            }
+          } else {
+            console.log('No OAuth tokens found in cookies')
           }
+          
+          // Final check: see if we now have a user
+          if (!user) {
+            console.log('Still no user after OAuth recovery attempts')
+          }
+          
         } catch (error) {
-          console.error('Error checking OAuth session:', error)
+          console.error('Error in enhanced OAuth session recovery:', error)
         } finally {
           setIsCheckingOAuth(false)
         }
