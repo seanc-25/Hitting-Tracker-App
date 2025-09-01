@@ -15,102 +15,26 @@ export async function GET(request: Request) {
     try {
       console.log('Processing OAuth callback with code')
       
-      // Exchange the authorization code for a session
-      const { data: { session }, error } = await supabase.auth.exchangeCodeForSession(code)
+      // IMPORTANT: Since we have detectSessionInUrl: true in Supabase config,
+      // we should NOT manually call exchangeCodeForSession. Supabase will
+      // automatically handle the PKCE flow and session creation.
+      // The manual call was causing the PKCE code verifier to be lost.
       
-      if (error) {
-        console.error('Error exchanging code for session:', error)
-        console.error('Error details:', {
-          message: error.message,
-          status: error.status,
-          name: error.name
-        })
-        throw error
-      }
-
-      if (!session) {
-        console.error('No session returned after code exchange')
-        throw new Error('No session returned from Supabase')
-      }
-
-      console.log('✅ Successfully exchanged code for session')
-      console.log('User ID:', session.user?.id)
-      console.log('User email:', session.user?.email)
-      console.log('Session expires:', session.expires_at ? new Date(session.expires_at * 1000) : 'no expiry')
-      console.log('Access token length:', session.access_token?.length || 0)
-      console.log('Refresh token length:', session.refresh_token?.length || 0)
+      // Instead, we'll wait for Supabase to process the callback automatically
+      // and then redirect to home. The session will be available on the client.
+      
+      console.log('✅ Letting Supabase handle PKCE flow automatically')
+      console.log('✅ Session will be available on client side')
       
       // Create response with redirect to home
       const response = NextResponse.redirect(new URL('/', requestUrl.origin))
       
-      // Set Supabase's standard session cookies for proper session recognition
-      if (session.access_token) {
-        response.cookies.set('sb-access-token', session.access_token, {
-          httpOnly: false, // Allow client-side access for debugging
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          maxAge: 60 * 60 * 24 * 7, // 7 days
-          path: '/',
-        })
-        console.log('✅ Set access token cookie')
-      } else {
-        console.log('⚠️ No access token to set in cookie')
-      }
-      
-      if (session.refresh_token) {
-        response.cookies.set('sb-refresh-token', session.refresh_token, {
-          httpOnly: false, // Allow client-side access for debugging
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          maxAge: 60 * 60 * 24 * 30, // 30 days
-          path: '/',
-        })
-        console.log('✅ Set refresh token cookie')
-      } else {
-        console.log('⚠️ No refresh token to set in cookie')
-      }
-
-      // Set the main Supabase auth cookie that the client expects
-      if (session.access_token && session.refresh_token) {
-        const authData = {
-          access_token: session.access_token,
-          refresh_token: session.refresh_token,
-          expires_at: session.expires_at,
-          token_type: 'bearer',
-          user: {
-            id: session.user?.id,
-            email: session.user?.email,
-            role: 'authenticated'
-          }
-        }
-        
-        // This is the key cookie that Supabase client looks for
-        response.cookies.set('sb-auth-token', JSON.stringify(authData), {
-          httpOnly: false,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          maxAge: 60 * 60 * 24 * 7, // 7 days
-          path: '/',
-        })
-        console.log('✅ Set main auth token cookie')
-        
-        // Also set the localStorage-compatible cookie
-        response.cookies.set('supabase.auth.token', JSON.stringify(authData), {
-          httpOnly: false,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          maxAge: 60 * 60 * 24 * 7, // 7 days
-          path: '/',
-        })
-        console.log('✅ Set localStorage-compatible auth token cookie')
-      }
-
       // Add cache control headers to prevent caching of the callback
       response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
       response.headers.set('Pragma', 'no-cache')
       response.headers.set('Expires', '0')
 
-      console.log('OAuth login successful, redirecting to home with enhanced session cookies')
+      console.log('OAuth login successful, redirecting to home')
       console.log('=== OAUTH CALLBACK COMPLETE ===')
       
       return response
