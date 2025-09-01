@@ -13,7 +13,7 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     // Use localStorage for session storage
     storage: typeof window !== 'undefined' ? window.localStorage : undefined,
     storageKey: 'supabase.auth.token',
-    // Better OAuth handling
+    // PKCE flow for enhanced security
     flowType: 'pkce',
   },
 }); 

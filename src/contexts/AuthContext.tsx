@@ -364,7 +364,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          // Let Supabase handle the entire OAuth flow
+          // Don't specify redirectTo - let Supabase use its default callback
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
