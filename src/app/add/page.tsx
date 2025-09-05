@@ -3,7 +3,7 @@
 import { useState, useEffect, ChangeEvent, FormEvent } from "react"
 import { useRouter } from "next/navigation"
 import Field from '@/components/Field'
-import { useAuth } from '@/contexts/AuthContext'
+import { useUser } from '@clerk/nextjs'
 import { supabase } from '@/lib/supabase'
 import { normalizeBattingSide } from '@/utils/battingSideUtils'
 import { getCurrentDateInTimezone } from '@/utils/dateUtils'
@@ -59,7 +59,7 @@ const hitTypeOptions = ["Line Drive", "Grounder", "Flyball"]
 
 export default function AddAtBatPage() {
   const router = useRouter()
-  const { user, profile } = useAuth()
+  const { isLoaded, isSignedIn, user } = useUser()
   const [form, setForm] = useState<AtBatForm>({
     ...initialState,
     // Defaults for speed: FB (Fastball) and On Time
@@ -71,16 +71,14 @@ export default function AddAtBatPage() {
   const [isLoadingProfile, setIsLoadingProfile] = useState(true)
 
   // Load user profile to check hitting side
+  // Note: This would need to be updated to work with Clerk user data
   useEffect(() => {
-    if (profile) {
-      setUserHittingSide(profile.hitting_side)
-      // If user is not a switch hitter, set their batting side automatically
-      if (profile.hitting_side !== 'switch') {
-        setForm(prev => ({ ...prev, battingSide: profile.hitting_side as 'left' | 'right' }))
-      }
-      setIsLoadingProfile(false)
-    }
-  }, [profile])
+    // For now, assume all users are right-handed hitters
+    // This would need to be updated to work with Clerk user metadata
+    setUserHittingSide('right')
+    setForm(prev => ({ ...prev, battingSide: 'right' }))
+    setIsLoadingProfile(false)
+  }, [])
 
   // Handle field changes
   const handleChange = (field: keyof AtBatForm, value: any) => {
@@ -123,7 +121,7 @@ export default function AddAtBatPage() {
     if (!validate()) return
 
     try {
-      if (!user) {
+      if (!isSignedIn || !user) {
         throw new Error('User not authenticated')
       }
 
@@ -161,7 +159,7 @@ export default function AddAtBatPage() {
     }
   }
 
-  if (isLoadingProfile) {
+  if (!isLoaded || isLoadingProfile) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center px-4">
         <div className="text-center">
@@ -170,6 +168,10 @@ export default function AddAtBatPage() {
         </div>
       </div>
     )
+  }
+
+  if (!isSignedIn || !user) {
+    return null
   }
 
   return (

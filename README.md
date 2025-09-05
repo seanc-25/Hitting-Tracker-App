@@ -1,36 +1,105 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Baseball Stats Tracker
 
-## Getting Started
+A mobile-optimized web app for tracking and analyzing baseball at-bat performance. Built with Next.js, Clerk authentication, and Supabase.
 
-First, run the development server:
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js 18+ 
+- npm or yarn
+- Clerk account (for authentication)
+- Supabase account (for data storage)
+
+### Environment Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone <your-repo-url>
+   cd next-app
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Create environment file**
+   ```bash
+   cp .env.example .env.local
+   ```
+
+4. **Configure environment variables**
+   Edit `.env.local` with your credentials:
+   ```env
+   # Clerk Authentication
+   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_[your-key-here]
+   CLERK_SECRET_KEY=sk_test_[your-key-here]
+   
+   # Supabase (for data storage)
+   NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+   ```
+
+### Development
 
 ```bash
+# Start development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 📱 Mobile Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **PWA Support**: Add to home screen for app-like experience
+- **Mobile-First Design**: Optimized for mobile browsers
+- **Touch-Friendly**: Large buttons and intuitive gestures
+- **Offline-Ready**: Works without internet connection
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🏗️ Tech Stack
 
-## Learn More
+- **Frontend**: Next.js 14, React 18, TypeScript
+- **Styling**: Tailwind CSS
+- **Authentication**: Clerk
+- **Database**: Supabase
+- **Deployment**: Vercel
 
-To learn more about Next.js, take a look at the following resources:
+## 📊 Features
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **At-Bat Logging**: Track pitch type, location, timing, contact quality
+- **Performance Analytics**: Visual charts and statistics
+- **Data Management**: Edit and delete at-bat records
+- **Mobile Navigation**: Bottom navigation with floating action button
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🔧 Configuration
 
-## Deploy on Vercel
+### Clerk Setup
+1. Create account at [clerk.com](https://clerk.com)
+2. Create new application
+3. Copy publishable and secret keys
+4. Add to environment variables
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Supabase Setup
+1. Create project at [supabase.com](https://supabase.com)
+2. Run database migrations from `/supabase/migrations/`
+3. Copy URL and anon key
+4. Add to environment variables
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📦 Deployment
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions.
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create feature branch
+3. Make changes
+4. Submit pull request
+
+## 📄 License
+
+MIT License - see LICENSE file for details

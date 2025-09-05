@@ -1,15 +1,23 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/contexts/AuthContext'
+import { useUser, useClerk } from '@clerk/nextjs'
 import { formatDateForLocaleDisplay } from '@/utils/dateUtils'
 
 export default function ProfilePage() {
   const router = useRouter()
-  const { user, profile, signOut } = useAuth()
+  const { user, isLoaded, isSignedIn } = useUser()
+  const { signOut } = useClerk()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Redirect unauthenticated users immediately
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      router.push('/sign-in')
+    }
+  }, [isLoaded, isSignedIn, router])
 
   const handleSignOut = async () => {
     try {
@@ -19,9 +27,9 @@ export default function ProfilePage() {
       console.log('Starting sign out process...')
       await signOut()
       
-      // Sign out successful - redirect to login page
+      // Sign out successful - redirect to sign-in page
       console.log('Sign out completed successfully')
-      router.push('/login')
+      router.push('/sign-in')
     } catch (err) {
       console.error('Error during sign out:', err)
       setError(err instanceof Error ? err.message : 'Failed to sign out')
@@ -29,8 +37,8 @@ export default function ProfilePage() {
     }
   }
 
-  // Show loading if profile is not available
-  if (!profile) {
+  // Show loading while Clerk is checking auth status
+  if (!isLoaded) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
@@ -39,6 +47,11 @@ export default function ProfilePage() {
         </div>
       </div>
     )
+  }
+
+  // Show nothing while redirecting unauthenticated users
+  if (!isSignedIn || !user) {
+    return null
   }
 
   const handleClose = () => {
@@ -80,24 +93,24 @@ export default function ProfilePage() {
         <div className="space-y-6">
           <div className="bg-gray-900 rounded-lg p-4">
             <h2 className="text-sm text-gray-400 mb-1">Name</h2>
-            <p className="text-lg">{profile.first_name} {profile.last_name}</p>
+            <p className="text-lg">{user?.firstName} {user?.lastName}</p>
           </div>
 
           <div className="bg-gray-900 rounded-lg p-4">
             <h2 className="text-sm text-gray-400 mb-1">Email</h2>
-            <p className="text-lg">{profile.email || user?.email || 'Not available'}</p>
+            <p className="text-lg">{user?.emailAddresses[0]?.emailAddress || 'Not available'}</p>
           </div>
 
           <div className="bg-gray-900 rounded-lg p-4">
-            <h2 className="text-sm text-gray-400 mb-1">Birthday</h2>
+            <h2 className="text-sm text-gray-400 mb-1">User ID</h2>
+            <p className="text-lg font-mono text-sm">{user?.id}</p>
+          </div>
+
+          <div className="bg-gray-900 rounded-lg p-4">
+            <h2 className="text-sm text-gray-400 mb-1">Account Created</h2>
             <p className="text-lg">
-              {profile.birthday ? formatDateForLocaleDisplay(profile.birthday) : 'Not available'}
+              {user?.createdAt ? formatDateForLocaleDisplay(user.createdAt.toISOString().split('T')[0]) : 'Not available'}
             </p>
-          </div>
-
-          <div className="bg-gray-900 rounded-lg p-4">
-            <h2 className="text-sm text-gray-400 mb-1">Hitting Side</h2>
-            <p className="text-lg capitalize">{profile.hitting_side}</p>
           </div>
 
           <button

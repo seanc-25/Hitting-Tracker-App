@@ -4,11 +4,6 @@ const nextConfig = {
   output: 'standalone',
   trailingSlash: false,
   
-  // Ensure proper App Router handling
-  experimental: {
-    appDir: true,
-  },
-  
   // Build optimization
   swcMinify: true,
   

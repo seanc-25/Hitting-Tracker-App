@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/contexts/AuthContext'
+import { useUser } from '@clerk/nextjs'
 import { supabase } from '@/lib/supabase'
 import { normalizeBattingSide, battingSideToDisplay } from '@/utils/battingSideUtils'
 import { formatTimestampForDisplay, formatDateForLocaleDisplay } from '@/utils/dateUtils'
@@ -37,7 +37,7 @@ interface EditingAtBat {
 
 export default function DataPage() {
   const router = useRouter()
-  const { user, profile } = useAuth()
+  const { isLoaded, isSignedIn, user } = useUser()
   const [atBats, setAtBats] = useState<AtBat[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -59,13 +59,20 @@ export default function DataPage() {
     battingSide: [] as string[]
   })
 
+  // Redirect unauthenticated users immediately
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      router.push('/sign-in')
+    }
+  }, [isLoaded, isSignedIn, router])
+
   useEffect(() => {
     const fetchAtBats = async () => {
       try {
         setIsLoading(true)
         setError(null)
 
-        if (!user) {
+        if (!isSignedIn || !user) {
           throw new Error('User not authenticated')
         }
 
@@ -89,10 +96,10 @@ export default function DataPage() {
       }
     }
 
-    if (user) {
+    if (isSignedIn && user) {
       fetchAtBats()
     }
-  }, [user])
+  }, [isSignedIn, user])
 
   const handleClose = () => {
     router.push('/')
@@ -391,7 +398,7 @@ export default function DataPage() {
     )
   }
 
-  if (isLoading) {
+  if (!isLoaded || isLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center px-4">
         <div className="text-center">
@@ -400,6 +407,10 @@ export default function DataPage() {
         </div>
       </div>
     )
+  }
+
+  if (!isSignedIn || !user) {
+    return null
   }
 
   if (error) {
@@ -551,7 +562,8 @@ export default function DataPage() {
                 </div>
 
                 {/* Batting Side Filter - Only for Switch Hitters */}
-                {profile?.hitting_side === 'switch' && (
+                {/* Note: This would need to be updated to work with Clerk user data */}
+                {/* {profile?.hitting_side === 'switch' && (
                   <div>
                     <label className="block text-base font-semibold text-gray-300 mb-3">Batting Side</label>
                     <div className="flex justify-center gap-3">
@@ -570,7 +582,7 @@ export default function DataPage() {
                       ))}
                     </div>
                   </div>
-                )}
+                )} */}
 
                 {/* Pitch Type Filter */}
                 <div>
@@ -734,13 +746,14 @@ export default function DataPage() {
                 )}
 
                 {/* Batting Side Indicator for Switch Hitters - Top Center */}
-                {profile?.hitting_side === 'switch' && (
+                {/* Note: This would need to be updated to work with Clerk user data */}
+                {/* {profile?.hitting_side === 'switch' && (
                   <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-10">
                     <span className="text-sm text-emerald-400 font-bold bg-gray-900 px-2 py-1 rounded-full border border-emerald-400/30">
                       {atBat.batting_side === 'Left' ? 'L' : 'R'}
                     </span>
                   </div>
-                )}
+                )} */}
 
                 {/* Header with Date and Actions */}
                 <div className="flex justify-between items-center mb-0">
@@ -794,7 +807,8 @@ export default function DataPage() {
                         </div>
                         
                         {/* Conditional Batting Side for Switch Hitters */}
-                        {profile?.hitting_side === 'switch' && (
+                        {/* Note: This would need to be updated to work with Clerk user data */}
+                        {/* {profile?.hitting_side === 'switch' && (
                           <div className="bg-gray-900 rounded-lg p-3 w-full max-w-lg">
                             <label className="block text-base font-medium text-gray-300 mb-2">
                               Which side did you hit from this at-bat?
@@ -816,7 +830,7 @@ export default function DataPage() {
                               ))}
                             </div>
                           </div>
-                        )}
+                        )} */}
 
                         {/* Pitch Type (vertical) + Pitch Location (9-box) side-by-side */}
                         <div className="bg-gray-900 rounded-lg p-3 w-full max-w-lg">
@@ -1142,12 +1156,13 @@ export default function DataPage() {
                         )}
 
                         {/* Batting Side - Only show for switch hitters */}
-                        {profile?.hitting_side === 'switch' && (
+                        {/* Note: This would need to be updated to work with Clerk user data */}
+                        {/* {profile?.hitting_side === 'switch' && (
                           <div className="bg-gray-800 rounded-lg p-3">
                             <h4 className="text-sm font-semibold text-gray-300 mb-2">Batting Side</h4>
                             <p className="text-white">{atBat.batting_side}</p>
                           </div>
-                        )}
+                        )} */}
 
                       </div>
                     </div>

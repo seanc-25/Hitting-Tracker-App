@@ -1,12 +1,39 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { useUser } from '@clerk/nextjs'
+import { useEffect } from 'react'
 
 export default function VideosPage() {
   const router = useRouter()
+  const { isLoaded, isSignedIn } = useUser()
+
+  // Redirect unauthenticated users immediately
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      router.push('/sign-in')
+    }
+  }, [isLoaded, isSignedIn, router])
 
   const handleClose = () => {
     router.push('/')
+  }
+
+  // Show loading while Clerk is checking auth status
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show nothing while redirecting unauthenticated users
+  if (!isSignedIn) {
+    return null
   }
 
   return (

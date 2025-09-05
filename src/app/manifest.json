@@ -1,0 +1,20 @@
+{
+  "name": "Baseball Stats Tracker",
+  "short_name": "Baseball Stats",
+  "description": "Track and analyze your baseball at-bat performance",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#3B82F6",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ],
+  "categories": ["sports", "productivity", "utilities"],
+  "lang": "en",
+  "dir": "ltr"
+}

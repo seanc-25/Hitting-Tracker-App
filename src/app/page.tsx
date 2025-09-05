@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useAuth } from "@/contexts/AuthContext"
+import { useUser, SignedIn, SignedOut } from "@clerk/nextjs"
+import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { Database } from "@/types/database"
 import Field from "@/components/Field"
@@ -9,21 +10,29 @@ import Field from "@/components/Field"
 type AtBat = Database['public']['Tables']['at_bats']['Row']
 
 export default function DashboardPage() {
-  const { user, profile, isLoading } = useAuth()
+  const { isLoaded, isSignedIn, user } = useUser()
+  const router = useRouter()
   const [atBats, setAtBats] = useState<AtBat[]>([])
   const [selectedPitchType, setSelectedPitchType] = useState<'all' | 'fastball' | 'offspeed'>('all')
   const [selectedBattingSide, setSelectedBattingSide] = useState<'left' | 'right'>('left')
   const [lastAtBatsCount, setLastAtBatsCount] = useState(10)
   const [loading, setLoading] = useState(true)
 
+  // Redirect unauthenticated users immediately
   useEffect(() => {
-    if (user) {
+    if (isLoaded && !isSignedIn) {
+      router.push('/sign-in')
+    }
+  }, [isLoaded, isSignedIn, router])
+
+  useEffect(() => {
+    if (isSignedIn && user) {
       fetchAtBats()
     }
-  }, [user])
+  }, [isSignedIn, user])
 
   const fetchAtBats = async () => {
-    if (!user) return
+    if (!isSignedIn || !user) return
     
     try {
       const { data, error } = await supabase
@@ -52,11 +61,13 @@ export default function DashboardPage() {
     }
     
     // Filter by batting side for switch hitters
-    if (profile?.hitting_side === 'switch') {
-      filtered = filtered.filter(ab => 
-        ab.batting_side?.toLowerCase() === selectedBattingSide
-      )
-    }
+    // Note: This would need to be updated to work with Clerk user data
+    // For now, we'll skip this filter
+    // if (profile?.hitting_side === 'switch') {
+    //   filtered = filtered.filter(ab => 
+    //     ab.batting_side?.toLowerCase() === selectedBattingSide
+    //   )
+    // }
     
     return filtered
   }
@@ -155,7 +166,8 @@ export default function DashboardPage() {
     return 'bg-red-500'
   }
 
-  if (isLoading || loading) {
+  // Show loading while Clerk is checking auth status
+  if (!isLoaded || loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
@@ -166,7 +178,8 @@ export default function DashboardPage() {
     )
   }
 
-  if (!user || !profile?.has_completed_onboarding) {
+  // Show nothing while redirecting unauthenticated users
+  if (!isSignedIn || !user) {
     return null
   }
 
@@ -214,7 +227,8 @@ export default function DashboardPage() {
           </div>
           
           {/* Batting Side Selector for Switch Hitters */}
-          {profile?.hitting_side === 'switch' && (
+          {/* Note: This would need to be updated to work with Clerk user data */}
+          {/* {profile?.hitting_side === 'switch' && (
             <div className="mt-4">
               <div className="bg-gray-900 rounded-xl p-1 inline-block">
                 <div className="flex">
@@ -237,7 +251,7 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
-          )}
+          )} */}
         </div>
 
         {/* Charts Grid */}
@@ -754,9 +768,10 @@ export default function DashboardPage() {
                 if (selectedPitchType !== 'all') {
                   message = `No ${selectedPitchType} at-bats recorded`
                 }
-                if (profile?.hitting_side === 'switch') {
-                  message += ` from ${selectedBattingSide} side`
-                }
+                // Note: This would need to be updated to work with Clerk user data
+                // if (profile?.hitting_side === 'switch') {
+                //   message += ` from ${selectedBattingSide} side`
+                // }
                 return message
               })()}
             </div>
