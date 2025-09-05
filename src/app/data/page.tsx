@@ -8,6 +8,7 @@ import { normalizeBattingSide, battingSideToDisplay } from '@/utils/battingSideU
 import { formatTimestampForDisplay, formatDateForLocaleDisplay } from '@/utils/dateUtils'
 import SegmentedControlBar from '@/components/SegmentedControlBar'
 import Field from '@/components/Field'
+import AuthGuard from '@/components/AuthGuard'
 
 interface AtBat {
   id: string
@@ -37,7 +38,7 @@ interface EditingAtBat {
 
 export default function DataPage() {
   const router = useRouter()
-  const { isLoaded, isSignedIn, user } = useUser()
+  const { user } = useUser()
   const [atBats, setAtBats] = useState<AtBat[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -59,20 +60,13 @@ export default function DataPage() {
     battingSide: [] as string[]
   })
 
-  // Redirect unauthenticated users immediately
-  useEffect(() => {
-    if (isLoaded && !isSignedIn) {
-      router.push('/sign-in')
-    }
-  }, [isLoaded, isSignedIn, router])
-
   useEffect(() => {
     const fetchAtBats = async () => {
       try {
         setIsLoading(true)
         setError(null)
 
-        if (!isSignedIn || !user) {
+        if (!user) {
           throw new Error('User not authenticated')
         }
 
@@ -96,10 +90,10 @@ export default function DataPage() {
       }
     }
 
-    if (isSignedIn && user) {
+    if (user) {
       fetchAtBats()
     }
-  }, [isSignedIn, user])
+  }, [user])
 
   const handleClose = () => {
     router.push('/')
@@ -398,7 +392,7 @@ export default function DataPage() {
     )
   }
 
-  if (!isLoaded || isLoading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center px-4">
         <div className="text-center">
@@ -407,10 +401,6 @@ export default function DataPage() {
         </div>
       </div>
     )
-  }
-
-  if (!isSignedIn || !user) {
-    return null
   }
 
   if (error) {
@@ -436,7 +426,8 @@ export default function DataPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center px-4 pt-6 pb-32">
+    <AuthGuard>
+      <div className="min-h-screen bg-black flex flex-col items-center px-4 pt-6 pb-32">
       <div className="w-full max-w-md relative">
         {/* Back Button */}
         <button
@@ -1193,5 +1184,6 @@ export default function DataPage() {
         )}
       </div>
     </div>
+    </AuthGuard>
   )
 } 

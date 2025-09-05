@@ -1,23 +1,17 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser, useClerk } from '@clerk/nextjs'
 import { formatDateForLocaleDisplay } from '@/utils/dateUtils'
+import AuthGuard from '@/components/AuthGuard'
 
 export default function ProfilePage() {
   const router = useRouter()
-  const { user, isLoaded, isSignedIn } = useUser()
+  const { user } = useUser()
   const { signOut } = useClerk()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  // Redirect unauthenticated users immediately
-  useEffect(() => {
-    if (isLoaded && !isSignedIn) {
-      router.push('/sign-in')
-    }
-  }, [isLoaded, isSignedIn, router])
 
   const handleSignOut = async () => {
     try {
@@ -37,29 +31,14 @@ export default function ProfilePage() {
     }
   }
 
-  // Show loading while Clerk is checking auth status
-  if (!isLoaded) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading profile...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Show nothing while redirecting unauthenticated users
-  if (!isSignedIn || !user) {
-    return null
-  }
 
   const handleClose = () => {
     router.push('/')
   }
 
   return (
-    <div className="min-h-screen bg-black text-white pb-32">
+    <AuthGuard>
+      <div className="min-h-screen bg-black text-white pb-32">
       <div className="p-4">
         <div className="w-full max-w-md relative mx-auto">
           {/* Back Button */}
@@ -130,5 +109,6 @@ export default function ProfilePage() {
         </div>
       </div>
     </div>
+    </AuthGuard>
   )
 } 

@@ -1,38 +1,30 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useUser, SignedIn, SignedOut } from "@clerk/nextjs"
-import { useRouter } from "next/navigation"
+import { useUser } from "@clerk/nextjs"
 import { supabase } from "@/lib/supabase"
 import { Database } from "@/types/database"
 import Field from "@/components/Field"
+import AuthGuard from "@/components/AuthGuard"
 
 type AtBat = Database['public']['Tables']['at_bats']['Row']
 
 export default function DashboardPage() {
-  const { isLoaded, isSignedIn, user } = useUser()
-  const router = useRouter()
+  const { user } = useUser()
   const [atBats, setAtBats] = useState<AtBat[]>([])
   const [selectedPitchType, setSelectedPitchType] = useState<'all' | 'fastball' | 'offspeed'>('all')
   const [selectedBattingSide, setSelectedBattingSide] = useState<'left' | 'right'>('left')
   const [lastAtBatsCount, setLastAtBatsCount] = useState(10)
   const [loading, setLoading] = useState(true)
 
-  // Redirect unauthenticated users immediately
   useEffect(() => {
-    if (isLoaded && !isSignedIn) {
-      router.push('/sign-in')
-    }
-  }, [isLoaded, isSignedIn, router])
-
-  useEffect(() => {
-    if (isSignedIn && user) {
+    if (user) {
       fetchAtBats()
     }
-  }, [isSignedIn, user])
+  }, [user])
 
   const fetchAtBats = async () => {
-    if (!isSignedIn || !user) return
+    if (!user) return
     
     try {
       const { data, error } = await supabase
@@ -166,21 +158,16 @@ export default function DashboardPage() {
     return 'bg-red-500'
   }
 
-  // Show loading while Clerk is checking auth status
-  if (!isLoaded || loading) {
+  // Show loading while fetching data
+  if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading...</p>
+          <p className="text-gray-400">Loading your data...</p>
         </div>
       </div>
     )
-  }
-
-  // Show nothing while redirecting unauthenticated users
-  if (!isSignedIn || !user) {
-    return null
   }
 
   const filteredAtBats = getFilteredAtBats()
@@ -192,7 +179,8 @@ export default function DashboardPage() {
   const hitTypeData = getHitTypeBreakdown(recentAtBats)
 
   return (
-    <div className="min-h-screen bg-black text-white p-4 pb-32">
+    <AuthGuard>
+      <div className="min-h-screen bg-black text-white p-4 pb-32">
       <div className="max-w-6xl mx-auto">
         {/* Header Section */}
         <div className="mb-8 mt-12">
@@ -782,5 +770,6 @@ export default function DashboardPage() {
         )}
       </div>
     </div>
+    </AuthGuard>
   )
 }
