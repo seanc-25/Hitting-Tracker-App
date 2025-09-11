@@ -1,11 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { SignedIn, SignedOut, SignIn } from "@clerk/nextjs"
 import { useUser } from "@clerk/nextjs"
 import { supabase } from "@/lib/supabase"
 import { Database } from "@/types/database"
 import Field from "@/components/Field"
-import AuthGuard from "@/components/AuthGuard"
 
 type AtBat = Database['public']['Tables']['at_bats']['Row']
 
@@ -179,8 +179,9 @@ export default function DashboardPage() {
   const hitTypeData = getHitTypeBreakdown(recentAtBats)
 
   return (
-    <AuthGuard>
-      <div className="min-h-screen bg-black text-white p-4 pb-32">
+    <div>
+      <SignedIn>
+        <div className="min-h-screen bg-black text-white p-4 pb-32">
       <div className="max-w-6xl mx-auto">
         {/* Header Section */}
         <div className="mb-8 mt-12">
@@ -770,6 +771,11 @@ export default function DashboardPage() {
         )}
       </div>
     </div>
-    </AuthGuard>
+      </SignedIn>
+      
+      <SignedOut>
+        <SignIn />
+      </SignedOut>
+    </div>
   )
 }

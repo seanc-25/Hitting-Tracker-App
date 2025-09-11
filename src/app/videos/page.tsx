@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import AuthGuard from '@/components/AuthGuard'
+import { SignedIn, SignedOut, SignIn } from '@clerk/nextjs'
 
 export default function VideosPage() {
   const router = useRouter()
@@ -11,8 +11,9 @@ export default function VideosPage() {
   }
 
   return (
-    <AuthGuard>
-    <div className="min-h-screen bg-black text-white pb-32">
+    <div>
+      <SignedIn>
+        <div className="min-h-screen bg-black text-white pb-32">
       <div className="p-4">
         <div className="w-full max-w-md relative mx-auto">
           {/* Back Button */}
@@ -59,6 +60,11 @@ export default function VideosPage() {
         </div>
       </div>
     </div>
-    </AuthGuard>
+      </SignedIn>
+      
+      <SignedOut>
+        <SignIn />
+      </SignedOut>
+    </div>
   )
 }

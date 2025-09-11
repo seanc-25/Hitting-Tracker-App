@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { SignedIn, SignedOut, SignIn } from '@clerk/nextjs'
 import { useUser } from '@clerk/nextjs'
 import { supabase } from '@/lib/supabase'
 import { normalizeBattingSide, battingSideToDisplay } from '@/utils/battingSideUtils'
 import { formatTimestampForDisplay, formatDateForLocaleDisplay } from '@/utils/dateUtils'
 import SegmentedControlBar from '@/components/SegmentedControlBar'
 import Field from '@/components/Field'
-import AuthGuard from '@/components/AuthGuard'
 
 interface AtBat {
   id: string
@@ -426,8 +426,9 @@ export default function DataPage() {
   }
 
   return (
-    <AuthGuard>
-      <div className="min-h-screen bg-black flex flex-col items-center px-4 pt-6 pb-32">
+    <div>
+      <SignedIn>
+        <div className="min-h-screen bg-black flex flex-col items-center px-4 pt-6 pb-32">
       <div className="w-full max-w-md relative">
         {/* Back Button */}
         <button
@@ -1184,6 +1185,11 @@ export default function DataPage() {
         )}
       </div>
     </div>
-    </AuthGuard>
+      </SignedIn>
+      
+      <SignedOut>
+        <SignIn />
+      </SignedOut>
+    </div>
   )
 } 

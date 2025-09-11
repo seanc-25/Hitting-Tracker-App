@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { SignedIn, SignedOut, SignIn, UserButton } from '@clerk/nextjs'
 import { useUser, useClerk } from '@clerk/nextjs'
 import { formatDateForLocaleDisplay } from '@/utils/dateUtils'
-import AuthGuard from '@/components/AuthGuard'
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -37,8 +37,9 @@ export default function ProfilePage() {
   }
 
   return (
-    <AuthGuard>
-      <div className="min-h-screen bg-black text-white pb-32">
+    <div>
+      <SignedIn>
+        <div className="min-h-screen bg-black text-white pb-32">
       <div className="p-4">
         <div className="w-full max-w-md relative mx-auto">
           {/* Back Button */}
@@ -55,11 +56,14 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Header */}
-      <div className="text-center mb-8 mt-12">
-        <h1 className="text-3xl font-bold text-white mb-2">Profile</h1>
-        <p className="text-gray-400">Manage your account settings</p>
-      </div>
+              {/* Header */}
+        <div className="text-center mb-8 mt-12">
+          <h1 className="text-3xl font-bold text-white mb-2">Profile</h1>
+          <p className="text-gray-400">Manage your account settings</p>
+          <div className="mt-4">
+            <UserButton />
+          </div>
+        </div>
 
       <div className="px-4">
 
@@ -109,6 +113,11 @@ export default function ProfilePage() {
         </div>
       </div>
     </div>
-    </AuthGuard>
+      </SignedIn>
+      
+      <SignedOut>
+        <SignIn />
+      </SignedOut>
+    </div>
   )
 } 
