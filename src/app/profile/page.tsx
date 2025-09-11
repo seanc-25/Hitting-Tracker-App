@@ -61,7 +61,14 @@ export default function ProfilePage() {
           <h1 className="text-3xl font-bold text-white mb-2">Profile</h1>
           <p className="text-gray-400">Manage your account settings</p>
           <div className="mt-4">
-            <UserButton />
+            <UserButton 
+              afterSignOutUrl="/"
+              appearance={{
+                elements: {
+                  avatarBox: "w-10 h-10"
+                }
+              }}
+            />
           </div>
         </div>
 
