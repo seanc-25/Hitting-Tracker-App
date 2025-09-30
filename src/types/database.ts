@@ -12,7 +12,7 @@ export interface Database {
       profiles: {
         Row: {
           id: string
-          user_id: string
+          user_id: string // Now text instead of uuid for Clerk compatibility
           email: string | null
           first_name: string
           last_name: string
@@ -24,7 +24,7 @@ export interface Database {
         }
         Insert: {
           id?: string
-          user_id: string
+          user_id: string // Clerk user ID format
           email?: string | null
           first_name: string
           last_name: string
@@ -51,7 +51,7 @@ export interface Database {
       at_bats: {
         Row: {
           id: string
-          user_id: string
+          user_id: string // Now text instead of uuid for Clerk compatibility
           date: string
           pitch_type: string
           timing: string
@@ -64,7 +64,7 @@ export interface Database {
         }
         Insert: {
           id?: string
-          user_id: string
+          user_id: string // Clerk user ID format
           date: string
           pitch_type: string
           timing: string

@@ -1,32 +1,79 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useUser } from "@clerk/nextjs"
-import { supabase } from "@/lib/supabase"
+import { useUser, SignedIn, SignedOut, SignIn } from "@clerk/nextjs"
+import { useRouter } from "next/navigation"
+import { getSupabaseClient } from "@/lib/supabase"
 import { Database } from "@/types/database"
+import { useProfileCompletion } from "@/hooks/useProfileCompletion"
 import Field from "@/components/Field"
 
 type AtBat = Database['public']['Tables']['at_bats']['Row']
 
 export default function DashboardPage() {
   const { user } = useUser()
+  const router = useRouter()
+  const { isCompleted, isLoading: profileLoading } = useProfileCompletion()
   const [atBats, setAtBats] = useState<AtBat[]>([])
   const [selectedPitchType, setSelectedPitchType] = useState<'all' | 'fastball' | 'offspeed'>('all')
   const [selectedBattingSide, setSelectedBattingSide] = useState<'left' | 'right'>('left')
   const [lastAtBatsCount, setLastAtBatsCount] = useState(10)
   const [loading, setLoading] = useState(true)
+  const [userHittingSide, setUserHittingSide] = useState<'left' | 'right' | 'switch' | null>(null)
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true)
+
+  // Redirect if user hasn't completed onboarding
+  useEffect(() => {
+    if (!profileLoading && !isCompleted) {
+      router.push('/onboarding')
+    }
+  }, [isCompleted, profileLoading, router])
 
   useEffect(() => {
     if (user) {
       fetchAtBats()
+      loadUserProfile()
     }
   }, [user])
+
+  // Load user profile to check hitting side
+  const loadUserProfile = async () => {
+    if (!user) return
+    
+    try {
+      const supabaseClient = getSupabaseClient()
+      const { data: profile, error } = await supabaseClient
+        .from('profiles')
+        .select('hitting_side')
+        .eq('user_id', user.id)
+        .single()
+
+      if (error) {
+        console.error('Error loading profile:', error)
+        setUserHittingSide('right')
+        setSelectedBattingSide('right')
+      } else {
+        setUserHittingSide(profile.hitting_side)
+        // Set default batting side based on user's hitting side
+        if (profile.hitting_side !== 'switch') {
+          setSelectedBattingSide(profile.hitting_side)
+        }
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error)
+      setUserHittingSide('right')
+      setSelectedBattingSide('right')
+    } finally {
+      setIsLoadingProfile(false)
+    }
+  }
 
   const fetchAtBats = async () => {
     if (!user) return
     
     try {
-      const { data, error } = await supabase
+      const supabaseClient = getSupabaseClient()
+      const { data, error } = await supabaseClient
         .from('at_bats')
         .select('*')
         .eq('user_id', user.id)
@@ -48,6 +95,13 @@ export default function DashboardPage() {
     if (selectedPitchType !== 'all') {
       filtered = filtered.filter(ab => 
         ab.pitch_type.toLowerCase() === selectedPitchType
+      )
+    }
+    
+    // Filter by batting side for switch hitters
+    if (userHittingSide === 'switch') {
+      filtered = filtered.filter(ab => 
+        ab.batting_side.toLowerCase() === selectedBattingSide
       )
     }
     
@@ -148,6 +202,23 @@ export default function DashboardPage() {
     return 'bg-red-500'
   }
 
+  // Show loading while checking profile completion
+  if (profileLoading || isLoadingProfile) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Don't render if user hasn't completed onboarding (will redirect)
+  if (!isCompleted) {
+    return null
+  }
+
   // Show loading while fetching data
   if (loading) {
     return (
@@ -169,7 +240,9 @@ export default function DashboardPage() {
   const hitTypeData = getHitTypeBreakdown(recentAtBats)
 
   return (
-    <div className="min-h-screen bg-black text-white p-4 pb-32">
+    <div>
+      <SignedIn>
+        <div className="min-h-screen bg-black text-white p-4 pb-32">
       <div className="max-w-6xl mx-auto">
         {/* Header Section */}
         <div className="mb-8 mt-12">
@@ -180,27 +253,54 @@ export default function DashboardPage() {
           {/* Divider */}
           <div className="w-24 h-0.5 bg-gray-700 mb-6"></div>
           
-          {/* Pitch Type Toggle */}
-          <div className="bg-gray-900 rounded-xl p-1 inline-block">
-            <div className="flex">
-              {[
-                { key: 'all', label: 'All Pitches' },
-                { key: 'fastball', label: 'Fastballs' },
-                { key: 'offspeed', label: 'Offspeed' }
-              ].map((option) => (
-                <button
-                  key={option.key}
-                  onClick={() => setSelectedPitchType(option.key as any)}
-                  className={`px-6 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    selectedPitchType === option.key
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-400 hover:text-white'
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
+          {/* Toggle Controls */}
+          <div className="flex flex-col sm:flex-row gap-2 items-start">
+            {/* Pitch Type Toggle */}
+            <div className="bg-gray-900/80 backdrop-blur-sm rounded-lg p-0.5 inline-block border border-gray-700/50">
+              <div className="flex">
+                {[
+                  { key: 'all', label: 'All' },
+                  { key: 'fastball', label: 'Fastballs' },
+                  { key: 'offspeed', label: 'Offspeed' }
+                ].map((option) => (
+                  <button
+                    key={option.key}
+                    onClick={() => setSelectedPitchType(option.key as any)}
+                    className={`px-4 py-1.5 rounded-md text-xs font-semibold tracking-wide transition-all duration-200 ${
+                      selectedPitchType === option.key
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25'
+                        : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {/* Batting Side Toggle - Only for Switch Hitters */}
+            {userHittingSide === 'switch' && (
+              <div className="bg-gray-900/80 backdrop-blur-sm rounded-lg p-0.5 inline-block border border-gray-700/50">
+                <div className="flex">
+                  {[
+                    { key: 'left', label: 'Left Side' },
+                    { key: 'right', label: 'Right Side' }
+                  ].map((option) => (
+                    <button
+                      key={option.key}
+                      onClick={() => setSelectedBattingSide(option.key as any)}
+                      className={`px-4 py-1.5 rounded-md text-xs font-semibold tracking-wide transition-all duration-200 ${
+                        selectedBattingSide === option.key
+                          ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25'
+                          : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -241,19 +341,26 @@ export default function DashboardPage() {
               <div className="text-lg font-medium text-white mb-2">
                 {getContactDescription(avgContact)}
               </div>
-              <div className="flex items-center justify-center gap-2 mb-3">
-                <span className="text-sm text-gray-400">Last</span>
-                <select
-                  value={lastAtBatsCount}
-                  onChange={(e) => setLastAtBatsCount(Number(e.target.value))}
-                  className="bg-gray-800 text-white text-sm rounded px-2 py-1 border border-gray-700"
-                >
-                  {[5, 10, 15, 20, 25].map(num => (
-                    <option key={num} value={num}>{num}</option>
-                  ))}
-                </select>
-                <span className="text-sm text-gray-400">at-bats</span>
-              </div>
+               <div className="flex items-center justify-center gap-2 mb-3">
+                 <span className="text-sm text-gray-400">Last</span>
+                 <div className="relative">
+                   <select
+                     value={lastAtBatsCount}
+                     onChange={(e) => setLastAtBatsCount(Number(e.target.value))}
+                     className="appearance-none bg-gray-900/80 backdrop-blur-sm text-white text-sm font-semibold px-2 py-1.5 pr-7 w-14 rounded-lg border border-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-200 cursor-pointer hover:bg-gray-800/80"
+                   >
+                     {[5, 10, 15, 20, 25].map(num => (
+                       <option key={num} value={num} className="bg-gray-900 text-white">{num}</option>
+                     ))}
+                   </select>
+                   <div className="absolute inset-y-0 right-2 flex items-center pointer-events-none">
+                     <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                     </svg>
+                   </div>
+                 </div>
+                 <span className="text-sm text-gray-400">at-bats</span>
+               </div>
             </div>
           </div>
 
@@ -291,7 +398,7 @@ export default function DashboardPage() {
           <div className="bg-gray-900 rounded-xl p-6 shadow-lg">
             <h3 className="text-lg font-semibold mb-4">Spray Chart</h3>
             <div className="flex items-center justify-center gap-8">
-              <div className="relative w-48 h-48">
+              <div className="relative w-40 h-32">
                 <Field
                   onLocationSelect={() => {}} // No-op since this is read-only
                   className="w-full h-full"
@@ -354,6 +461,11 @@ export default function DashboardPage() {
                 if (selectedPitchType !== 'all') {
                   message = `No ${selectedPitchType} at-bats recorded`
                 }
+                if (userHittingSide === 'switch' && selectedPitchType !== 'all') {
+                  message = `No ${selectedPitchType} at-bats from ${selectedBattingSide} side`
+                } else if (userHittingSide === 'switch') {
+                  message = `No at-bats from ${selectedBattingSide} side`
+                }
                 return message
               })()}
             </div>
@@ -363,6 +475,18 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+        </div>
+      </SignedIn>
+      
+      <SignedOut>
+        <div className="min-h-screen bg-black flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-400">Please sign in to access the dashboard</p>
+            <SignIn />
+          </div>
+        </div>
+      </SignedOut>
     </div>
   )
 }

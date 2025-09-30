@@ -3,8 +3,8 @@
 import { useState, useEffect, ChangeEvent, FormEvent } from "react"
 import { useRouter } from "next/navigation"
 import Field from '@/components/Field'
-import { useUser } from '@clerk/nextjs'
-import { supabase } from '@/lib/supabase'
+import { useUser, SignedIn, SignedOut, SignIn } from '@clerk/nextjs'
+import { getSupabaseClient } from '@/lib/supabase'
 import { normalizeBattingSide } from '@/utils/battingSideUtils'
 import { getCurrentDateInTimezone } from '@/utils/dateUtils'
 import SegmentedControlBar from '@/components/SegmentedControlBar'
@@ -71,14 +71,43 @@ export default function AddAtBatPage() {
   const [isLoadingProfile, setIsLoadingProfile] = useState(true)
 
   // Load user profile to check hitting side
-  // Note: This would need to be updated to work with Clerk user data
   useEffect(() => {
-    // For now, assume all users are right-handed hitters
-    // This would need to be updated to work with Clerk user metadata
-    setUserHittingSide('right')
-    setForm(prev => ({ ...prev, battingSide: 'right' }))
-    setIsLoadingProfile(false)
-  }, [])
+    const loadUserProfile = async () => {
+      if (!user) return
+      
+      try {
+        const supabaseClient = getSupabaseClient()
+        const { data: profile, error } = await supabaseClient
+          .from('profiles')
+          .select('hitting_side')
+          .eq('user_id', user.id)
+          .single()
+
+        if (error) {
+          console.error('Error loading profile:', error)
+          // Default to right-handed if profile not found
+          setUserHittingSide('right')
+          setForm(prev => ({ ...prev, battingSide: 'right' }))
+        } else {
+          setUserHittingSide(profile.hitting_side)
+          // Set default batting side based on user's hitting side
+          // Switch hitters will choose per at-bat, others get their default
+          if (profile.hitting_side !== 'switch') {
+            setForm(prev => ({ ...prev, battingSide: profile.hitting_side }))
+          }
+        }
+      } catch (error) {
+        console.error('Error loading profile:', error)
+        // Default to right-handed on error
+        setUserHittingSide('right')
+        setForm(prev => ({ ...prev, battingSide: 'right' }))
+      } finally {
+        setIsLoadingProfile(false)
+      }
+    }
+
+    loadUserProfile()
+  }, [user])
 
   // Handle field changes
   const handleChange = (field: keyof AtBatForm, value: any) => {
@@ -139,7 +168,8 @@ export default function AddAtBatPage() {
       }
 
       // Insert into Supabase
-      const { data, error } = await supabase
+      const supabaseClient = getSupabaseClient()
+      const { data, error } = await supabaseClient
         .from('at_bats')
         .insert([atBatData])
         .select()
@@ -175,7 +205,9 @@ export default function AddAtBatPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center px-4 pt-6 pb-16">
+    <div>
+      <SignedIn>
+        <div className="min-h-screen bg-black flex flex-col items-center px-4 pt-6 pb-16">
       <div className="w-full max-w-2xl relative">
         {/* Back Button */}
         <button
@@ -398,6 +430,18 @@ export default function AddAtBatPage() {
           </div>
         </div>
       </form>
+        </div>
+      </SignedIn>
+      
+      <SignedOut>
+        <div className="min-h-screen bg-black flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-400">Please sign in to add at-bats</p>
+            <SignIn />
+          </div>
+        </div>
+      </SignedOut>
     </div>
   )
 } 

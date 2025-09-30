@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from '@clerk/nextjs';
-import BottomNavWithFAB from "@/components/BottomNavWithFAB";
+import ConditionalBottomNav from "@/components/ConditionalBottomNav";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -38,7 +38,7 @@ export default function RootLayout({
       <html lang="en">
         <body className={`${inter.variable} font-sans antialiased`}>
           {children}
-          <BottomNavWithFAB />
+          <ConditionalBottomNav />
         </body>
       </html>
     </ClerkProvider>

@@ -8,10 +8,10 @@ export default function BottomNavWithFAB() {
 
   const navItems = [
     {
-      name: 'Dashboard',
-      href: '/',
+      name: 'Home',
+      href: '/dashboard',
       icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
         </svg>
       )
@@ -20,7 +20,7 @@ export default function BottomNavWithFAB() {
       name: 'Data',
       href: '/data',
       icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
         </svg>
       )
@@ -29,7 +29,7 @@ export default function BottomNavWithFAB() {
       name: 'Videos',
       href: '/videos',
       icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           {/* Video library style: screen with play triangle (slightly taller rectangle) */}
           <rect x="3" y="5" width="18" height="14" rx="2" ry="2" strokeWidth="2" />
           <path d="M10 10l5 3-5 3v-6z" fill="currentColor" />
@@ -40,7 +40,7 @@ export default function BottomNavWithFAB() {
       name: 'Profile',
       href: '/profile',
       icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
         </svg>
       )
@@ -54,10 +54,10 @@ export default function BottomNavWithFAB() {
         {/* Floating Action Button */}
         <Link
           href="/add"
-          className="absolute left-1/2 transform -translate-x-1/2 -top-6 z-40 w-16 h-16 bg-blue-600 hover:bg-blue-700 rounded-full flex items-center justify-center shadow-lg transition-colors duration-200"
+          className="absolute left-1/2 transform -translate-x-1/2 top-1/2 -translate-y-1/2 z-40 w-12 h-12 bg-blue-600 hover:bg-blue-700 rounded-full flex items-center justify-center shadow-lg transition-colors duration-200"
           aria-label="Add At-Bat"
         >
-          <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
         </Link>
