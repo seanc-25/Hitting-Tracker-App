@@ -22,7 +22,7 @@ interface AtBatForm {
   contact: number
   hitType: string
   hitLocation: HitLocation | null
-  battingSide: 'left' | 'right' | ''
+  battingSide: 'left' | 'right' | 'switch' | ''
 }
 
 interface AtBatFormErrors {
