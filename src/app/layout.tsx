@@ -33,14 +33,25 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
   return (
-    <ClerkProvider>
-      <html lang="en">
-        <body className={`${inter.variable} font-sans antialiased`}>
-          {children}
-          <ConditionalBottomNav />
-        </body>
-      </html>
-    </ClerkProvider>
+    <html lang="en">
+      <body className={`${inter.variable} font-sans antialiased`}>
+        {publishableKey ? (
+          <ClerkProvider publishableKey={publishableKey}>
+            {children}
+            <ConditionalBottomNav />
+          </ClerkProvider>
+        ) : (
+          <div className="min-h-screen bg-black flex items-center justify-center">
+            <div className="text-center">
+              <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-400">Loading...</p>
+            </div>
+          </div>
+        )}
+      </body>
+    </html>
   );
 }
