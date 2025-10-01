@@ -49,7 +49,8 @@ export default function RootLayout({
             publishableKey={publishableKey}
             signInUrl="/sign-in"
             signUpUrl="/sign-up"
-            fallbackRedirectUrl="/dashboard"
+            signInFallbackRedirectUrl="/dashboard"
+            signUpFallbackRedirectUrl="/onboarding"
           >
             {children}
             <ConditionalBottomNav />
