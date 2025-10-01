@@ -16,20 +16,25 @@ export default function Home() {
     
     // Only redirect when we have a definitive answer about sign-in status
     if (!isLoading && isSignedIn !== undefined) {
-      if (isSignedIn) {
-        // User is signed in, redirect based on completion status
-        if (isCompleted) {
-          console.log('Home page: redirecting to dashboard')
-          router.push('/dashboard')
+      // Add a small delay to ensure Clerk is fully initialized
+      const timeoutId = setTimeout(() => {
+        if (isSignedIn) {
+          // User is signed in, redirect based on completion status
+          if (isCompleted) {
+            console.log('Home page: redirecting to dashboard')
+            router.push('/dashboard')
+          } else {
+            console.log('Home page: redirecting to onboarding')
+            router.push('/onboarding')
+          }
         } else {
-          console.log('Home page: redirecting to onboarding')
-          router.push('/onboarding')
+          // User is not signed in, redirect to sign-in
+          console.log('Home page: redirecting to sign-in')
+          router.push('/sign-in')
         }
-      } else {
-        // User is not signed in, redirect to sign-in
-        console.log('Home page: redirecting to sign-in')
-        router.push('/sign-in')
-      }
+      }, 100); // 100ms delay
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [isSignedIn, isLoading, isCompleted, router])
 

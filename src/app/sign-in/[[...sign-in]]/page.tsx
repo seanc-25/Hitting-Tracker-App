@@ -9,6 +9,7 @@ function SignInRedirect() {
 
   useEffect(() => {
     // Redirect to dashboard when user is already signed in
+    console.log('SignInRedirect: redirecting to dashboard');
     router.push('/dashboard');
   }, [router]);
 
@@ -37,7 +38,6 @@ export default function Page() {
               <p className="text-gray-400">Sign in to continue tracking your performance</p>
             </div>
             <SignIn 
-              redirectUrl="/dashboard"
               appearance={{
                 elements: {
                   formButtonPrimary: "bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors",
@@ -55,18 +55,18 @@ export default function Page() {
                   formFieldSuccessText: "text-green-400"
                 }
               }}
-                   />
-                   <div className="text-center mt-6">
-                     <p className="text-gray-400 text-sm">
-                       Don't have an account?{' '}
-                       <a href="/sign-up" className="text-blue-400 hover:text-blue-300 font-medium">
-                         Sign up
-                       </a>
-                     </p>
-                   </div>
-                 </div>
-               </div>
-             </SignedOut>
-           </div>
-         );
-       }
+            />
+            <div className="text-center mt-6">
+              <p className="text-gray-400 text-sm">
+                Don't have an account?{' '}
+                <a href="/sign-up" className="text-blue-400 hover:text-blue-300 font-medium">
+                  Sign up
+                </a>
+              </p>
+            </div>
+          </div>
+        </div>
+      </SignedOut>
+    </div>
+  );
+}
