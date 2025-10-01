@@ -12,17 +12,24 @@ interface ProfileCompletion {
 }
 
 export function useProfileCompletion(): ProfileCompletion {
-  const { user, isSignedIn } = useUser()
+  const { user, isSignedIn, isLoaded } = useUser()
   const [isLoading, setIsLoading] = useState(true)
   const [profile, setProfile] = useState<any | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const checkProfileCompletion = async () => {
-      console.log('useProfileCompletion: checking profile for user:', user?.id, 'isSignedIn:', isSignedIn)
+      console.log('useProfileCompletion: checking profile for user:', user?.id, 'isSignedIn:', isSignedIn, 'isLoaded:', isLoaded)
       
+      // CRITICAL: Wait for Clerk to fully load before making any decisions
+      if (!isLoaded) {
+        console.log('useProfileCompletion: Clerk not loaded yet, keeping loading true')
+        return
+      }
+      
+      // Now that Clerk is loaded, check auth state
       if (!isSignedIn || !user) {
-        console.log('useProfileCompletion: user not signed in, setting loading false')
+        console.log('useProfileCompletion: user not signed in after Clerk loaded, setting loading false')
         setIsLoading(false)
         return
       }
@@ -74,7 +81,7 @@ export function useProfileCompletion(): ProfileCompletion {
     }
 
     checkProfileCompletion()
-  }, [user, isSignedIn])
+  }, [user, isSignedIn, isLoaded])
 
   const hasProfile = !!profile
   const isCompleted = hasProfile && profile?.has_completed_onboarding === true

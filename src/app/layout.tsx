@@ -39,6 +39,7 @@ export default function RootLayout({
   if (typeof window === 'undefined') {
     console.log('Layout: publishableKey exists:', !!publishableKey);
     console.log('Layout: publishableKey starts with:', publishableKey?.substring(0, 10));
+    console.log('Layout: publishableKey length:', publishableKey?.length);
   }
 
   return (
