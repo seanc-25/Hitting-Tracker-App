@@ -39,7 +39,11 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.variable} font-sans antialiased`}>
         {publishableKey ? (
-          <ClerkProvider publishableKey={publishableKey}>
+          <ClerkProvider 
+            publishableKey={publishableKey}
+            signInUrl="/sign-in"
+            signUpUrl="/sign-up"
+          >
             {children}
             <ConditionalBottomNav />
           </ClerkProvider>
