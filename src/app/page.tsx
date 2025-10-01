@@ -14,7 +14,8 @@ export default function Home() {
   useEffect(() => {
     console.log('Home page useEffect: isLoading:', isLoading, 'isSignedIn:', isSignedIn, 'isCompleted:', isCompleted)
     
-    if (!isLoading) {
+    // Only redirect when we have a definitive answer about sign-in status
+    if (!isLoading && isSignedIn !== undefined) {
       if (isSignedIn) {
         // User is signed in, redirect based on completion status
         if (isCompleted) {

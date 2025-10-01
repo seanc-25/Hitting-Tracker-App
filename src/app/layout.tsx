@@ -34,6 +34,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  
+  // Debug logging for production
+  if (typeof window === 'undefined') {
+    console.log('Layout: publishableKey exists:', !!publishableKey);
+    console.log('Layout: publishableKey starts with:', publishableKey?.substring(0, 10));
+  }
 
   return (
     <html lang="en">
@@ -43,6 +49,8 @@ export default function RootLayout({
             publishableKey={publishableKey}
             signInUrl="/sign-in"
             signUpUrl="/sign-up"
+            afterSignInUrl="/dashboard"
+            afterSignUpUrl="/onboarding"
           >
             {children}
             <ConditionalBottomNav />
